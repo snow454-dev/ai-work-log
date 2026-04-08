@@ -4,7 +4,7 @@ import { supabase } from '../lib/supabase';
 import {
   Mic, MicOff, Sparkles, Clock, Building2,
   Loader2, AlignLeft, CheckCircle2, LayoutDashboard,
-  PenLine, Calendar, CalendarRange, BarChart3,
+  PenLine, Calendar, CalendarRange,
   Plus, Trash2, Link2, Target, FolderOpen, X, CalendarDays, FileText, Mail, Send,
   Save, Pencil, History
 } from 'lucide-react';
@@ -117,6 +117,8 @@ export default function App() {
   interface SavedReport { id: string; type: 'daily' | 'weekly' | 'monthly'; date: string; report: ReportResult; savedAt: string; }
   const [savedReports, setSavedReports] = useState<SavedReport[]>([]);
   const [editingReportId, setEditingReportId] = useState<string | null>(null);
+  const [dashboardLogTab, setDashboardLogTab] = useState<'daily' | 'weekly' | 'monthly'>('daily');
+  const [expandedReportId, setExpandedReportId] = useState<string | null>(null);
 
   // localStorage から読み込み
   useEffect(() => {
@@ -869,6 +871,8 @@ export default function App() {
           {mainTab === 'dashboard' && (
             <motion.div key="dashboard" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -16 }} transition={{ duration: 0.2 }}
               className="space-y-6">
+
+              {/* 集計ボタン */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {([
                   { period: 'week' as const, label: '今週のレポートを生成', Icon: Calendar },
@@ -884,12 +888,12 @@ export default function App() {
                   </button>
                 ))}
               </div>
+
+              {/* 集計結果 */}
               <AnimatePresence>
                 {aggregatedReport && !isGeneratingAggregate && (
                   <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, height: 'auto', y: 0 }} exit={{ opacity: 0, y: -16 }}
                     className="space-y-6">
-
-                    {/* 全体サマリー */}
                     <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#FFFFFF', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
                       <div className="px-6 py-4 flex items-center border-b" style={{ backgroundColor: '#F0F9FF', borderColor: '#BAE6FD' }}>
                         <CheckCircle2 className="w-5 h-5 mr-2" style={{ color: '#0C4A6E' }} />
@@ -907,14 +911,9 @@ export default function App() {
                         </div>
                       </div>
                     </div>
-
-                    {/* 顧客別カード（PDF・メール付き） */}
                     {aggregatedReport.client_summaries.map((s, idx) => {
                       const dispName = displayClient(s.client_name);
-                      const clientEmail = emailInputs[s.client_name] || emailHistory[s.client_name] || '';
                       const isEmailOpen = sendingEmailFor === `agg_${s.client_name}`;
-
-                      // 顧客別PDF
                       const handleClientPdf = () => {
                         const today = new Date().toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric' });
                         const actList = s.activities.map(a => `<li style="margin-bottom:4px;">${a}</li>`).join('');
@@ -926,7 +925,7 @@ export default function App() {
                         .summary{margin:20px 0;padding:14px;background:#F0F9FF;border-radius:8px;border:1px solid #E0F2FE;}
                         .summary span{font-size:12px;color:#64748B;}.summary strong{font-size:22px;color:#0EA5E9;}
                         ul{padding-left:20px;}</style></head><body>
-                        <div class="header"><h1>集計報告書</h1><p style="color:#64748B;font-size:13px;margin:0;">AI Work Log Assistant</p></div>
+                        <div class="header"><h1>集計報告書</h1></div>
                         <div class="meta"><div><strong>宛先:</strong> ${dispName}</div><div><strong>報告日:</strong> ${today}</div></div>
                         <div class="summary"><span>作業時間合計</span><br/><strong>${s.duration_hours} h</strong></div>
                         <h3 style="font-size:14px;margin-top:24px;">主な作業内容</h3><ul>${actList}</ul>
@@ -936,29 +935,22 @@ export default function App() {
                         if (!w) { alert('ポップアップを許可してください。'); return; }
                         w.document.write(html); w.document.close(); w.onload = () => w.print();
                       };
-
-                      // 顧客別メール
                       const handleClientEmail = () => {
                         const email = emailInputs[s.client_name] || '';
                         if (!email.trim()) { alert('メールアドレスを入力してください。'); return; }
                         saveEmailForClient(s.client_name, email);
                         const today = new Date().toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric' });
                         const subject = `集計報告書 - ${dispName} (${today})`;
-                        const body = [
-                          `${dispName}`, ``, `いつもお世話になっております。`, `下記の通り、集計報告をいたします。`, ``,
+                        const body = [`${dispName}`, ``, `いつもお世話になっております。`, `下記の通り、集計報告をいたします。`, ``,
                           `━━━━━━━━━━━━━━━━━━━━`, `報告日: ${today}`, `作業時間合計: ${s.duration_hours} h`, `━━━━━━━━━━━━━━━━━━━━`, ``,
-                          `【主な作業内容】`, ...s.activities.map(a => `・${a}`), ``,
-                          `【総括】`, s.summary, ``,
+                          `【主な作業内容】`, ...s.activities.map(a => `・${a}`), ``, `【総括】`, s.summary, ``,
                           ...((s.links || []).length > 0 ? [`【参考リンク】`, ...(s.links || []).map(l => `・${l}`), ``] : []),
-                          `何かご不明な点がございましたらお気軽にご連絡ください。`, `よろしくお願いいたします。`,
-                        ].join('\n');
+                          `よろしくお願いいたします。`].join('\n');
                         window.open(`mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`);
                         setSendingEmailFor(null);
                       };
-
                       return (
                         <div key={idx} className="rounded-xl overflow-hidden" style={{ backgroundColor: '#FFFFFF', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
-                          {/* Client header with buttons */}
                           <div className="px-6 py-4 flex items-center justify-between border-b flex-wrap gap-2" style={{ backgroundColor: '#F0F9FF', borderColor: '#BAE6FD' }}>
                             <div className="flex items-center gap-3">
                               <span className="font-semibold text-[#0F172A]">{dispName}</span>
@@ -981,47 +973,35 @@ export default function App() {
                               </button>
                             </div>
                           </div>
-
-                          {/* Email panel */}
                           <AnimatePresence>
                             {isEmailOpen && (
                               <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
                                 <div className="px-6 py-4 border-b flex items-center gap-3 flex-wrap" style={{ backgroundColor: '#FFFDF7', borderColor: '#E0F2FE' }}>
                                   <Mail className="w-4 h-4 shrink-0" style={{ color: '#64748B' }} />
                                   <div className="flex-1 min-w-[200px]">
-                                    <DInput type="email" value={emailInputs[s.client_name] || ''}
-                                      onChange={(e) => setEmailInputs(prev => ({ ...prev, [s.client_name]: e.target.value }))}
-                                      placeholder="example@company.co.jp" />
+                                    <DInput type="email" value={emailInputs[s.client_name] || ''} onChange={(e) => setEmailInputs(prev => ({ ...prev, [s.client_name]: e.target.value }))} placeholder="example@company.co.jp" />
                                   </div>
                                   {emailHistory[s.client_name] && (
-                                    <button onClick={() => setEmailInputs(prev => ({ ...prev, [s.client_name]: emailHistory[s.client_name] }))}
-                                      className="text-xs text-[#0EA5E9] shrink-0">前回: {emailHistory[s.client_name]}</button>
+                                    <button onClick={() => setEmailInputs(prev => ({ ...prev, [s.client_name]: emailHistory[s.client_name] }))} className="text-xs shrink-0" style={{ color: '#0EA5E9' }}>前回: {emailHistory[s.client_name]}</button>
                                   )}
-                                  <button onClick={handleClientEmail}
-                                    className="flex items-center text-xs font-semibold px-4 py-2.5 rounded-lg shrink-0"
-                                    style={{ backgroundColor: '#0EA5E9', color: '#FFFFFF' }}>
+                                  <button onClick={handleClientEmail} className="flex items-center text-xs font-semibold px-4 py-2.5 rounded-lg shrink-0" style={{ backgroundColor: '#0EA5E9', color: '#FFFFFF' }}>
                                     <Send className="w-3.5 h-3.5 mr-1.5" />送信
                                   </button>
                                 </div>
                               </motion.div>
                             )}
                           </AnimatePresence>
-
-                          {/* Content */}
                           <div className="p-6 space-y-4">
-                            <div>
-                              <span className="text-xs text-[#64748B]">主な作業:</span>
+                            <div><span className="text-xs text-[#64748B]">主な作業:</span>
                               <ul className="list-disc list-inside text-sm text-[#475569] mt-1 space-y-0.5">{s.activities.map((a, i) => <li key={i}>{a}</li>)}</ul>
                             </div>
-                            <div>
-                              <span className="text-xs text-[#64748B]">総括:</span>
+                            <div><span className="text-xs text-[#64748B]">総括:</span>
                               <p className="text-sm text-[#475569] mt-1 leading-relaxed">{s.summary}</p>
                             </div>
                             {(s.links || []).length > 0 && (
                               <div className="flex items-start gap-2 pt-1">
                                 <Link2 className="w-3.5 h-3.5 mt-0.5 shrink-0" style={{ color: '#64748B' }} />
                                 <div className="space-y-0.5">
-                                  <span className="text-xs text-[#64748B]">参考リンク:</span>
                                   {(s.links || []).map((link, li) => (
                                     <a key={li} href={link} target="_blank" rel="noopener noreferrer" className="block text-xs truncate" style={{ color: '#0EA5E9' }}>{link}</a>
                                   ))}
@@ -1035,23 +1015,166 @@ export default function App() {
                   </motion.div>
                 )}
               </AnimatePresence>
-              {/* ━━━ 蓄積されたログ（日報/週報/月報タブ） ━━━ */}
-              {renderSavedList('daily')}
-              {renderSavedList('weekly')}
-              {renderSavedList('monthly')}
 
-              {savedReports.length === 0 && (
-                <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#FFFFFF', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
-                  <div className="p-5 border-b flex items-center justify-between" style={{ borderColor: '#F0F9FF', backgroundColor: '#F8FDFF' }}>
-                    <h2 className="text-sm font-semibold text-[#0F172A] flex items-center">
-                      <BarChart3 className="w-4 h-4 mr-2" style={{ color: '#0EA5E9' }} />蓄積されたログ
-                    </h2>
+              {/* ━━━ 記録済みログ（日報/週報/月報サブタブ） ━━━ */}
+              {(() => {
+                const logTypes = [
+                  { key: 'daily' as const, label: '日報', icon: <PenLine className="w-3.5 h-3.5 mr-1" /> },
+                  { key: 'weekly' as const, label: '週報', icon: <Calendar className="w-3.5 h-3.5 mr-1" /> },
+                  { key: 'monthly' as const, label: '月報', icon: <CalendarDays className="w-3.5 h-3.5 mr-1" /> },
+                ];
+                const [dashLogTab, setDashLogTab] = [dashboardLogTab, setDashboardLogTab];
+                const filtered = savedReports.filter(r => r.type === dashLogTab);
+
+                return (
+                  <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#FFFFFF', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+                    {/* サブタブ */}
+                    <div className="p-4 border-b flex items-center justify-between flex-wrap gap-3" style={{ borderColor: '#F0F9FF', backgroundColor: '#F8FDFF' }}>
+                      <h2 className="text-sm font-semibold text-[#0F172A] flex items-center">
+                        <History className="w-4 h-4 mr-2" style={{ color: '#0EA5E9' }} />記録済みログ
+                      </h2>
+                      <div className="flex items-center gap-1 p-0.5 rounded-lg border" style={{ borderColor: '#E0F2FE' }}>
+                        {logTypes.map(t => (
+                          <button key={t.key} onClick={() => setDashLogTab(t.key)}
+                            className="flex items-center px-3 py-1.5 rounded-md text-xs font-semibold transition-colors"
+                            style={{ backgroundColor: dashLogTab === t.key ? '#0EA5E9' : 'transparent', color: dashLogTab === t.key ? '#FFFFFF' : '#64748B' }}>
+                            {t.icon}{t.label}
+                            <span className="ml-1.5 px-1.5 py-0.5 rounded text-[10px] font-bold"
+                              style={{ backgroundColor: dashLogTab === t.key ? 'rgba(255,255,255,0.25)' : '#F0F9FF', color: dashLogTab === t.key ? '#FFFFFF' : '#94A3B8' }}>
+                              {savedReports.filter(r => r.type === t.key).length}
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {filtered.length === 0 ? (
+                      <div className="p-8 text-center text-sm text-[#94A3B8]">
+                        {dashLogTab === 'daily' ? '日報' : dashLogTab === 'weekly' ? '週報' : '月報'}の記録はまだありません。
+                      </div>
+                    ) : (
+                      <div>
+                        {filtered.map((sr, idx) => {
+                          const dispName = displayClient(sr.report.client);
+                          const isEditing = editingReportId === sr.id;
+                          const isExpanded = expandedReportId === sr.id;
+                          const srEmailOpen = sendingEmailFor === `saved_${sr.id}`;
+
+                          return (
+                            <div key={sr.id} style={{ borderBottom: idx < filtered.length - 1 ? '1px solid #F0F9FF' : 'none' }}>
+                              <div className="p-5">
+                                {/* Header row */}
+                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-1">
+                                  <div className="flex items-center gap-2 flex-wrap cursor-pointer" onClick={() => setExpandedReportId(isExpanded ? null : sr.id)}>
+                                    <span className="px-2.5 py-1 rounded-md text-xs font-semibold" style={{ backgroundColor: '#F0F9FF', color: '#64748B' }}>{sr.date}</span>
+                                    <span className="font-semibold text-sm text-[#0F172A]">{dispName}</span>
+                                    <span className="text-xs font-semibold px-2 py-0.5 rounded-md" style={{ backgroundColor: '#F0F9FF', color: '#0EA5E9' }}>
+                                      {sr.report.total_hours}h / {sr.report.projects.length}件
+                                    </span>
+                                  </div>
+                                  <div className="flex items-center gap-1.5">
+                                    <button onClick={() => setSendingEmailFor(srEmailOpen ? null : `saved_${sr.id}`)}
+                                      className="flex items-center text-xs font-semibold px-2.5 py-1.5 rounded-md transition-all"
+                                      style={{ backgroundColor: srEmailOpen ? '#0284C7' : '#FFFFFF', color: srEmailOpen ? '#FFFFFF' : '#0EA5E9', border: '1px solid #0EA5E9' }}>
+                                      <Mail className="w-3 h-3 mr-1" />メール
+                                    </button>
+                                    <button onClick={() => handleDownloadPdf(sr.report)}
+                                      className="flex items-center text-xs font-semibold px-2.5 py-1.5 rounded-md"
+                                      style={{ backgroundColor: '#0EA5E9', color: '#FFFFFF' }}>
+                                      <FileText className="w-3 h-3 mr-1" />PDF
+                                    </button>
+                                    <button onClick={() => setEditingReportId(isEditing ? null : sr.id)} className="p-1.5 rounded-md" style={{ color: '#64748B' }} title="編集">
+                                      <Pencil className="w-3.5 h-3.5" />
+                                    </button>
+                                    <button onClick={() => deleteReport(sr.id)} className="p-1.5 rounded-md hover:text-red-500" style={{ color: '#94A3B8' }} title="削除">
+                                      <Trash2 className="w-3.5 h-3.5" />
+                                    </button>
+                                  </div>
+                                </div>
+
+                                {/* Email panel */}
+                                <AnimatePresence>
+                                  {srEmailOpen && (
+                                    <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
+                                      <div className="mt-3 p-3 rounded-lg border flex items-center gap-3 flex-wrap" style={{ borderColor: '#E0F2FE', backgroundColor: '#FFFDF7' }}>
+                                        <div className="flex-1 min-w-[180px]">
+                                          <DInput type="email" value={emailInputs[sr.report.client] || ''} onChange={(e) => setEmailInputs(prev => ({ ...prev, [sr.report.client]: e.target.value }))} placeholder="example@company.co.jp" />
+                                        </div>
+                                        {emailHistory[sr.report.client] && (
+                                          <button onClick={() => setEmailInputs(prev => ({ ...prev, [sr.report.client]: emailHistory[sr.report.client] }))} className="text-xs shrink-0" style={{ color: '#0EA5E9' }}>前回のアドレス</button>
+                                        )}
+                                        <button onClick={() => handleSendEmail(sr.report)} className="flex items-center text-xs font-semibold px-3 py-2 rounded-lg shrink-0" style={{ backgroundColor: '#0EA5E9', color: '#FFFFFF' }}>
+                                          <Send className="w-3 h-3 mr-1" />送信
+                                        </button>
+                                      </div>
+                                    </motion.div>
+                                  )}
+                                </AnimatePresence>
+
+                                {/* Expanded details */}
+                                <AnimatePresence>
+                                  {(isExpanded || isEditing) && (
+                                    <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
+                                      <div className="mt-3 space-y-3">
+                                        {sr.report.projects.map((p, pi) => (
+                                          <div key={pi}>
+                                            {isEditing ? (
+                                              <div className="space-y-2 rounded-lg border p-3" style={{ borderColor: '#E0F2FE' }}>
+                                                <div className="grid grid-cols-[1fr_80px_80px] gap-2">
+                                                  <DInput value={p.name} onChange={(e) => { const updated = { ...sr.report, projects: sr.report.projects.map((pp, ppi) => ppi === pi ? { ...pp, name: e.target.value } : pp) }; setSavedReports(prev => prev.map(r => r.id === sr.id ? { ...r, report: updated } : r)); }} placeholder="プロジェクト名" />
+                                                  <DInput type="number" value={String(p.hours)} onChange={(e) => { const hrs = Number(e.target.value); const updated = { ...sr.report, projects: sr.report.projects.map((pp, ppi) => ppi === pi ? { ...pp, hours: hrs } : pp), total_hours: sr.report.projects.reduce((s, pp, ppi) => s + (ppi === pi ? hrs : pp.hours), 0) }; setSavedReports(prev => prev.map(r => r.id === sr.id ? { ...r, report: updated } : r)); }} placeholder="h" />
+                                                  <DInput type="number" value={String(p.progress)} onChange={(e) => { const updated = { ...sr.report, projects: sr.report.projects.map((pp, ppi) => ppi === pi ? { ...pp, progress: Number(e.target.value) } : pp) }; setSavedReports(prev => prev.map(r => r.id === sr.id ? { ...r, report: updated } : r)); }} placeholder="%" />
+                                                </div>
+                                                <DTextarea value={p.formatted_report} onChange={(e) => { const updated = { ...sr.report, projects: sr.report.projects.map((pp, ppi) => ppi === pi ? { ...pp, formatted_report: e.target.value } : pp) }; setSavedReports(prev => prev.map(r => r.id === sr.id ? { ...r, report: updated } : r)); }} rows={2} />
+                                              </div>
+                                            ) : (
+                                              <div className="rounded-lg border p-4 space-y-2" style={{ borderColor: '#E0F2FE' }}>
+                                                <div className="flex items-center justify-between">
+                                                  <span className="font-semibold text-sm text-[#0F172A]">{p.name}</span>
+                                                  <div className="flex items-center gap-2">
+                                                    <span className="text-xs font-semibold px-2 py-0.5 rounded-md" style={{ backgroundColor: '#F0F9FF', color: '#0EA5E9' }}>{p.hours}h</span>
+                                                    <span className="text-xs font-semibold px-2 py-0.5 rounded-md" style={{ backgroundColor: '#F0F9FF', color: p.progress >= 100 ? '#16A34A' : '#0EA5E9' }}>{p.progress}%</span>
+                                                  </div>
+                                                </div>
+                                                <div className="h-1.5 rounded-full" style={{ backgroundColor: '#E0F2FE' }}>
+                                                  <div className="h-1.5 rounded-full" style={{ width: `${Math.min(p.progress, 100)}%`, backgroundColor: p.progress >= 100 ? '#16A34A' : '#0EA5E9' }} />
+                                                </div>
+                                                <p className="text-sm text-[#475569] leading-relaxed">{p.formatted_report}</p>
+                                                {p.links.length > 0 && (
+                                                  <div className="flex items-start gap-2 pt-1">
+                                                    <Link2 className="w-3 h-3 mt-0.5 shrink-0" style={{ color: '#64748B' }} />
+                                                    <div className="space-y-0.5">
+                                                      {p.links.map((link, li) => (
+                                                        <a key={li} href={link} target="_blank" rel="noopener noreferrer" className="block text-xs truncate" style={{ color: '#0EA5E9' }}>{link}</a>
+                                                      ))}
+                                                    </div>
+                                                  </div>
+                                                )}
+                                              </div>
+                                            )}
+                                          </div>
+                                        ))}
+                                        {isEditing && (
+                                          <div className="flex justify-end">
+                                            <button onClick={() => { const sr2 = savedReports.find(r => r.id === sr.id); if (sr2) updateSavedReport(sr.id, sr2.report); }}
+                                              className="flex items-center text-xs font-semibold px-4 py-2 rounded-lg" style={{ backgroundColor: '#0EA5E9', color: '#FFFFFF' }}>
+                                              <Save className="w-3.5 h-3.5 mr-1.5" />保存
+                                            </button>
+                                          </div>
+                                        )}
+                                      </div>
+                                    </motion.div>
+                                  )}
+                                </AnimatePresence>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
-                  <div className="p-8 text-center text-sm text-[#94A3B8]">
-                    記録されたレポートはまだありません。日報・週報・月報を生成後「記録」ボタンで保存できます。
-                  </div>
-                </div>
-              )}
+                );
+              })()}
             </motion.div>
           )}
         </AnimatePresence>
