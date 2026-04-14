@@ -86,7 +86,7 @@ function useClientTabs() {
       i === tabIdx ? { ...t, projects: t.projects.map(p => p.id === projId ? { ...p, [field]: value } : p) } : t
     ));
   };
-  const isValid = tabs.some(t => t.clientName.trim() !== '' && t.projects.some(p => p.name.trim() && p.hours.trim() && p.memo.trim()));
+  const isValid = tabs.some(t => t.clientName.trim() !== '' && t.projects.some(p => p.name.trim() !== ''));
 
   return { tabs, activeIdx, setActiveIdx, add, remove, updateName, updateEmail, addProject, removeProject, updateProject, isValid, setTabs };
 }
@@ -261,34 +261,55 @@ export default function App() {
     }
   };
 
-  /* ── Generate helper ── */
+  /* ── Generate helper (1顧客分) ── */
   const generateForClient = async (clientName: string, projects: ProjectEntry[]): Promise<ReportResult | null> => {
-    const valid = projects.filter(p => p.name.trim() && p.hours.trim() && p.memo.trim());
+    const valid = projects.filter(p => p.name.trim());
     if (!clientName.trim() || valid.length === 0) return null;
     const formatted = clientName.includes('社') || clientName.includes('株式会社') ? clientName : `株式会社${clientName}`;
+
+    // プロジェクトごとにAI生成（失敗してもメモをそのまま使う）
     const projectResults = await Promise.all(valid.map(async (proj) => {
-      const res = await fetch('/api/generate', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ rawInput: proj.memo, duration: proj.hours, projectName: proj.name, progress: proj.progress }),
-      });
-      if (!res.ok) throw new Error('AI生成エラー');
-      const data = await res.json();
-      return { name: proj.name, hours: Number(proj.hours), progress: Number(proj.progress) || 0, memo: proj.memo, links: proj.links.split('\n').map(l => l.trim()).filter(Boolean), formatted_report: data.report };
+      let reportText = proj.memo; // フォールバック: メモをそのまま使用
+      try {
+        const res = await fetch('/api/generate', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ rawInput: proj.memo, duration: proj.hours, projectName: proj.name, progress: proj.progress }),
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.report) reportText = data.report;
+        }
+      } catch (e) {
+        console.warn(`AI生成失敗（${proj.name}）、メモをそのまま使用:`, e);
+      }
+      return {
+        name: proj.name, hours: Number(proj.hours) || 0, progress: Number(proj.progress) || 0,
+        memo: proj.memo, links: proj.links.split('\n').map(l => l.trim()).filter(Boolean),
+        formatted_report: reportText,
+      };
     }));
-    let { data: cd, error: ce } = await supabase.from('clients').select('id').eq('name', formatted).single();
-    if (ce && ce.code !== 'PGRST116') throw ce;
-    let clientId;
-    if (cd) { clientId = cd.id; } else {
-      const { data: nc, error: ne } = await supabase.from('clients').insert([{ name: formatted }]).select('id').single();
-      if (ne) throw ne; clientId = nc.id;
+
+    // Supabase保存（失敗しても続行）
+    try {
+      let { data: cd, error: ce } = await supabase.from('clients').select('id').eq('name', formatted).single();
+      if (ce && ce.code !== 'PGRST116') throw ce;
+      let clientId;
+      if (cd) { clientId = cd.id; } else {
+        const { data: nc, error: ne } = await supabase.from('clients').insert([{ name: formatted }]).select('id').single();
+        if (ne) throw ne; clientId = nc.id;
+      }
+      for (const proj of projectResults) {
+        await supabase.from('daily_logs').insert([{ client_id: clientId, duration_hours: proj.hours, raw_input: proj.memo, formatted_report: proj.formatted_report }]);
+      }
+    } catch (e) {
+      console.warn('Supabase保存失敗（ローカルには保存されます）:', e);
     }
-    for (const proj of projectResults) {
-      await supabase.from('daily_logs').insert([{ client_id: clientId, duration_hours: proj.hours, raw_input: proj.memo, formatted_report: proj.formatted_report }]);
-    }
+
     return { client: formatted, total_hours: projectResults.reduce((s, p) => s + p.hours, 0), projects: projectResults };
   };
 
-  const handleGenerate = async (clientTabsData: ClientTab[]) => {
+  /** AI生成して自動保存 */
+  const handleGenerate = async (type: 'daily' | 'weekly' | 'monthly', date: string, clientTabsData: ClientTab[]) => {
     setIsGenerating(true); setGeneratedReports([]);
     try {
       const results: ReportResult[] = [];
@@ -296,16 +317,46 @@ export default function App() {
         const r = await generateForClient(tab.clientName, tab.projects);
         if (r) {
           results.push(r);
-          // メールアドレスを保存
-          if (tab.email.trim()) {
-            saveEmailForClient(r.client, tab.email.trim());
-          }
+          saveReport(type, date, r); // 自動保存
+          if (tab.email.trim()) saveEmailForClient(r.client, tab.email.trim());
         }
       }
       if (results.length === 0) { alert('入力が不足しています。'); return; }
       setGeneratedReports(results);
-    } catch (e) { console.error(e); alert('レポートの生成または保存に失敗しました。'); }
+      alert(`${results.length}件のレポートを生成・保存しました。`);
+    } catch (e) { console.error(e); alert('レポートの生成に失敗しました。'); }
     finally { setIsGenerating(false); }
+  };
+
+  /** AI生成なしでそのまま保存 */
+  const saveDirectFromTabs = (type: 'daily' | 'weekly' | 'monthly', date: string, clientTabsData: ClientTab[]) => {
+    let count = 0;
+    for (const tab of clientTabsData) {
+      const validProjects = tab.projects.filter(p => p.name.trim());
+      if (!tab.clientName.trim() || validProjects.length === 0) continue;
+
+      const formatted = tab.clientName.includes('社') || tab.clientName.includes('株式会社')
+        ? tab.clientName : `株式会社${tab.clientName}`;
+
+      const report: ReportResult = {
+        client: formatted,
+        total_hours: validProjects.reduce((s, p) => s + (Number(p.hours) || 0), 0),
+        projects: validProjects.map(p => ({
+          name: p.name,
+          hours: Number(p.hours) || 0,
+          progress: Number(p.progress) || 0,
+          memo: p.memo,
+          links: p.links.split('\n').map(l => l.trim()).filter(Boolean),
+          formatted_report: p.memo,
+        })),
+      };
+
+      saveReport(type, date, report);
+      if (tab.email.trim()) saveEmailForClient(formatted, tab.email.trim());
+      count++;
+    }
+    if (count === 0) { alert('入力が不足しています。'); return; }
+    alert(`${count}件の報告を保存しました。`);
   };
 
   /* ── Aggregate ── */
@@ -444,6 +495,7 @@ export default function App() {
     buttonIcon: React.ReactNode,
     onSubmit: () => void,
     valid: boolean,
+    onSaveDirect: () => void,
   ) => (
     <div className="rounded-xl p-6 md:p-8" style={{ backgroundColor: '#FFFFFF', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
 
@@ -528,13 +580,20 @@ export default function App() {
       })()}
 
       {/* Submit */}
-      <button onClick={onSubmit} disabled={!valid || isGenerating}
-        className="w-full flex items-center justify-center py-3.5 rounded-lg text-white font-semibold text-sm mt-6 transition-all"
-        style={{ backgroundColor: !valid ? '#CBD5E1' : '#0EA5E9', cursor: !valid ? 'not-allowed' : 'pointer' }}
-        onMouseEnter={(e) => { if (valid) e.currentTarget.style.backgroundColor = '#0284C7'; }}
-        onMouseLeave={(e) => { if (valid) e.currentTarget.style.backgroundColor = '#0EA5E9'; }}>
-        {isGenerating ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />AIがレポートを生成中...</> : <>{buttonIcon}{buttonLabel}</>}
-      </button>
+      <div className="flex gap-3 mt-6">
+        <button onClick={onSaveDirect} disabled={!valid}
+          className="flex-1 flex items-center justify-center py-3.5 rounded-lg font-semibold text-sm transition-all"
+          style={{ backgroundColor: !valid ? '#E0F2FE' : '#FFFFFF', color: !valid ? '#94A3B8' : '#0EA5E9', border: '1px solid', borderColor: !valid ? '#E0F2FE' : '#0EA5E9', cursor: !valid ? 'not-allowed' : 'pointer' }}>
+          <Save className="w-4 h-4 mr-2" />そのまま保存
+        </button>
+        <button onClick={onSubmit} disabled={!valid || isGenerating}
+          className="flex-1 flex items-center justify-center py-3.5 rounded-lg text-white font-semibold text-sm transition-all"
+          style={{ backgroundColor: !valid ? '#CBD5E1' : '#0EA5E9', cursor: !valid ? 'not-allowed' : 'pointer' }}
+          onMouseEnter={(e) => { if (valid) e.currentTarget.style.backgroundColor = '#0284C7'; }}
+          onMouseLeave={(e) => { if (valid) e.currentTarget.style.backgroundColor = '#0EA5E9'; }}>
+          {isGenerating ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />AIが生成中...</> : <>{buttonIcon}{buttonLabel}</>}
+        </button>
+      </div>
     </div>
   );
 
@@ -818,10 +877,11 @@ export default function App() {
                   </label>
                   <DInput type="date" value={dailyDate} onChange={(e) => setDailyDate(e.target.value)} />
                 </div>,
-                '全顧客分の日報を一括生成', <Sparkles className="w-4 h-4 mr-2" />,
-                () => handleGenerate(daily.tabs), daily.isValid)}
+                'AI生成して保存', <Sparkles className="w-4 h-4 mr-2" />,
+                () => handleGenerate('daily', dailyDate, daily.tabs), daily.isValid,
+                () => saveDirectFromTabs('daily', dailyDate, daily.tabs))}
               <AnimatePresence>
-                {generatedReports.length > 0 && !isGenerating && <div className="space-y-6">{generatedReports.map((r, i) => renderReportResult(r, i, () => { saveReport('daily', dailyDate, r); alert('記録しました'); }))}</div>}
+                {generatedReports.length > 0 && !isGenerating && <div className="space-y-6">{generatedReports.map((r, i) => renderReportResult(r, i))}</div>}
               </AnimatePresence>
               {renderSavedList('daily')}
             </motion.div>
@@ -838,10 +898,11 @@ export default function App() {
                   </label>
                   <DInput type="date" value={weeklyStart} onChange={(e) => setWeeklyStart(e.target.value)} />
                 </div>,
-                '全顧客分の週報を一括生成', <Sparkles className="w-4 h-4 mr-2" />,
-                () => handleGenerate(weekly.tabs), weekly.isValid)}
+                'AI生成して保存', <Sparkles className="w-4 h-4 mr-2" />,
+                () => handleGenerate('weekly', weeklyStart, weekly.tabs), weekly.isValid,
+                () => saveDirectFromTabs('weekly', weeklyStart, weekly.tabs))}
               <AnimatePresence>
-                {generatedReports.length > 0 && !isGenerating && <div className="space-y-6">{generatedReports.map((r, i) => renderReportResult(r, i, () => { saveReport('weekly', weeklyStart, r); alert('記録しました'); }))}</div>}
+                {generatedReports.length > 0 && !isGenerating && <div className="space-y-6">{generatedReports.map((r, i) => renderReportResult(r, i))}</div>}
               </AnimatePresence>
               {renderSavedList('weekly')}
             </motion.div>
@@ -858,10 +919,11 @@ export default function App() {
                   </label>
                   <DInput type="month" value={monthlyMonth} onChange={(e) => setMonthlyMonth(e.target.value)} />
                 </div>,
-                '全顧客分の月報を一括生成', <FileText className="w-4 h-4 mr-2" />,
-                () => handleGenerate(monthly.tabs), monthly.isValid)}
+                'AI生成して保存', <FileText className="w-4 h-4 mr-2" />,
+                () => handleGenerate('monthly', monthlyMonth, monthly.tabs), monthly.isValid,
+                () => saveDirectFromTabs('monthly', monthlyMonth, monthly.tabs))}
               <AnimatePresence>
-                {generatedReports.length > 0 && !isGenerating && <div className="space-y-6">{generatedReports.map((r, i) => renderReportResult(r, i, () => { saveReport('monthly', monthlyMonth, r); alert('記録しました'); }))}</div>}
+                {generatedReports.length > 0 && !isGenerating && <div className="space-y-6">{generatedReports.map((r, i) => renderReportResult(r, i))}</div>}
               </AnimatePresence>
               {renderSavedList('monthly')}
             </motion.div>
