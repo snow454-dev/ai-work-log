@@ -23,6 +23,15 @@ interface AggregatedReport {
   total_duration_hours: number;
   client_summaries: { client_name: string; duration_hours: number; activities: string[]; links: string[]; summary: string; }[];
 }
+interface SupabaseLog {
+  id: string;
+  date: string;
+  duration_hours: number;
+  raw_input: string;
+  formatted_report: string;
+  created_at: string;
+  clients: { name: string } | null;
+}
 
 /* ═══════════════════ Helpers ═══════════════════ */
 
@@ -119,6 +128,21 @@ export default function App() {
   const handleLogout = async () => {
     await supabase.auth.signOut();
   };
+
+  /* ── Supabaseからログ一覧を取得 ── */
+  const [supabaseLogs, setSupabaseLogs] = useState<SupabaseLog[]>([]);
+
+  useEffect(() => {
+    if (!user) return;
+    const fetchLogs = async () => {
+      const { data, error } = await supabase
+        .from('daily_logs')
+        .select('id, date, duration_hours, raw_input, formatted_report, created_at, clients(name)')
+        .order('created_at', { ascending: false });
+      if (!error && data) setSupabaseLogs(data as any);
+    };
+    fetchLogs();
+  }, [user]);
 
   /* ── メインタブ ── */
   const [mainTab, setMainTab] = useState<'daily' | 'weekly' | 'monthly' | 'dashboard'>('daily');
@@ -282,7 +306,6 @@ export default function App() {
       };
     }));
 
-    // Supabase保存（user_id付き）
     try {
       const currentUser = (await supabase.auth.getUser()).data.user;
       let { data: cd, error: ce } = await supabase.from('clients').select('id').eq('name', formatted).single();
@@ -305,6 +328,12 @@ export default function App() {
           formatted_report: proj.formatted_report,
         }]);
       }
+      // 保存後にログ一覧を再取得
+      const { data: refreshed } = await supabase
+        .from('daily_logs')
+        .select('id, date, duration_hours, raw_input, formatted_report, created_at, clients(name)')
+        .order('created_at', { ascending: false });
+      if (refreshed) setSupabaseLogs(refreshed as any);
     } catch (e) { console.warn('Supabase保存失敗:', e); }
 
     return { client: formatted, total_hours: projectResults.reduce((s, p) => s + p.hours, 0), projects: projectResults };
@@ -652,6 +681,51 @@ export default function App() {
     );
   };
 
+  /* ── Supabaseログ一覧表示 ── */
+  const renderSupabaseLogList = () => {
+    if (supabaseLogs.length === 0) return (
+      <div className="rounded-xl p-8 text-center text-sm text-[#94A3B8]"
+        style={{ backgroundColor: '#FFFFFF', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+        まだ記録がありません
+      </div>
+    );
+    return (
+      <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#FFFFFF', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+        <div className="p-5 border-b flex items-center justify-between" style={{ borderColor: '#F0F9FF', backgroundColor: '#F8FDFF' }}>
+          <h2 className="text-sm font-semibold text-[#0F172A] flex items-center">
+            <History className="w-4 h-4 mr-2" style={{ color: '#0EA5E9' }} />Supabase記録一覧
+          </h2>
+          <span className="text-xs font-semibold px-3 py-1 rounded-md border" style={{ borderColor: '#E0F2FE', color: '#64748B' }}>
+            {supabaseLogs.length} 件
+          </span>
+        </div>
+        <div>
+          {supabaseLogs.map((log, idx) => {
+            const clientName = (log.clients as any)?.name ?? '不明';
+            const dispName = displayClient(clientName);
+            const dateStr = log.date || log.created_at?.split('T')[0] || '';
+            return (
+              <div key={log.id} style={{ borderBottom: idx < supabaseLogs.length - 1 ? '1px solid #F0F9FF' : 'none' }}>
+                <div className="p-5 hover:bg-[#FFFDF7] transition-colors">
+                  <div className="flex items-center gap-2 flex-wrap mb-2">
+                    <span className="px-2.5 py-1 rounded-md text-xs font-semibold" style={{ backgroundColor: '#F0F9FF', color: '#64748B' }}>{dateStr}</span>
+                    <span className="font-semibold text-sm text-[#0F172A]">{dispName}</span>
+                    <span className="text-xs font-semibold px-2 py-0.5 rounded-md" style={{ backgroundColor: '#F0F9FF', color: '#0EA5E9' }}>
+                      <Clock className="w-3 h-3 inline mr-1" />{log.duration_hours}h
+                    </span>
+                  </div>
+                  <p className="text-sm text-[#475569] leading-relaxed line-clamp-2">
+                    {log.formatted_report || log.raw_input || '（内容なし）'}
+                  </p>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
+
   const renderSavedList = (type: 'daily' | 'weekly' | 'monthly') => {
     const items = savedReports.filter(r => r.type === type);
     const typeLabel = type === 'daily' ? '日報' : type === 'weekly' ? '週報' : '月報';
@@ -746,10 +820,7 @@ export default function App() {
   return (
     <div className="min-h-screen font-[Inter,system-ui,sans-serif] text-[#1E293B] leading-[1.6]" style={{ backgroundColor: '#FFFDF7' }}>
       <div className="max-w-4xl mx-auto px-4 py-8 md:py-12 space-y-8">
-
-        {/* Header */}
         <header className="text-center space-y-6">
-          {/* ログアウトボタン */}
           <div className="flex justify-end items-center gap-3">
             <span className="text-xs text-[#94A3B8]">{user.email}</span>
             <button onClick={handleLogout} className="text-xs font-semibold px-3 py-1.5 rounded-lg border transition-colors"
@@ -793,6 +864,7 @@ export default function App() {
                 () => handleGenerate('daily', dailyDate, daily.tabs), daily.isValid,
                 () => saveDirectFromTabs('daily', dailyDate, daily.tabs))}
               <AnimatePresence>{generatedReports.length > 0 && !isGenerating && <div className="space-y-6">{generatedReports.map((r, i) => renderReportResult(r, i))}</div>}</AnimatePresence>
+              {renderSupabaseLogList()}
               {renderSavedList('daily')}
             </motion.div>
           )}
@@ -804,6 +876,7 @@ export default function App() {
                 () => handleGenerate('weekly', weeklyStart, weekly.tabs), weekly.isValid,
                 () => saveDirectFromTabs('weekly', weeklyStart, weekly.tabs))}
               <AnimatePresence>{generatedReports.length > 0 && !isGenerating && <div className="space-y-6">{generatedReports.map((r, i) => renderReportResult(r, i))}</div>}</AnimatePresence>
+              {renderSupabaseLogList()}
               {renderSavedList('weekly')}
             </motion.div>
           )}
@@ -815,6 +888,7 @@ export default function App() {
                 () => handleGenerate('monthly', monthlyMonth, monthly.tabs), monthly.isValid,
                 () => saveDirectFromTabs('monthly', monthlyMonth, monthly.tabs))}
               <AnimatePresence>{generatedReports.length > 0 && !isGenerating && <div className="space-y-6">{generatedReports.map((r, i) => renderReportResult(r, i))}</div>}</AnimatePresence>
+              {renderSupabaseLogList()}
               {renderSavedList('monthly')}
             </motion.div>
           )}
