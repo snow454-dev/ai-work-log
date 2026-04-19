@@ -131,18 +131,45 @@ export default function App() {
 
   /* ── Supabaseからログ一覧を取得 ── */
   const [supabaseLogs, setSupabaseLogs] = useState<SupabaseLog[]>([]);
+  const [editingLogId, setEditingLogId] = useState<string | null>(null);
+  const [editingLog, setEditingLog] = useState<Partial<SupabaseLog>>({});
+
+  const fetchLogs = async () => {
+    const { data, error } = await supabase
+      .from('daily_logs')
+      .select('id, date, duration_hours, raw_input, formatted_report, created_at, clients(name)')
+      .order('created_at', { ascending: false });
+    if (!error && data) setSupabaseLogs(data as any);
+  };
 
   useEffect(() => {
     if (!user) return;
-    const fetchLogs = async () => {
-      const { data, error } = await supabase
-        .from('daily_logs')
-        .select('id, date, duration_hours, raw_input, formatted_report, created_at, clients(name)')
-        .order('created_at', { ascending: false });
-      if (!error && data) setSupabaseLogs(data as any);
-    };
     fetchLogs();
   }, [user]);
+
+  const handleDeleteLog = async (id: string) => {
+    if (!confirm('この記録を削除しますか？')) return;
+    const { error } = await supabase.from('daily_logs').delete().eq('id', id);
+    if (!error) setSupabaseLogs(prev => prev.filter(l => l.id !== id));
+    else alert('削除に失敗しました');
+  };
+
+  const handleEditLog = (log: SupabaseLog) => {
+    setEditingLogId(log.id);
+    setEditingLog({ formatted_report: log.formatted_report, duration_hours: log.duration_hours, date: log.date });
+  };
+
+  const handleSaveLog = async (id: string) => {
+    const { error } = await supabase.from('daily_logs').update({
+      formatted_report: editingLog.formatted_report,
+      duration_hours: editingLog.duration_hours,
+      date: editingLog.date,
+    }).eq('id', id);
+    if (!error) {
+      setSupabaseLogs(prev => prev.map(l => l.id === id ? { ...l, ...editingLog } as SupabaseLog : l));
+      setEditingLogId(null);
+    } else alert('保存に失敗しました');
+  };
 
   /* ── メインタブ ── */
   const [mainTab, setMainTab] = useState<'daily' | 'weekly' | 'monthly' | 'dashboard'>('daily');
@@ -198,10 +225,8 @@ export default function App() {
   const [activeRecordingId, setActiveRecordingId] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedReports, setGeneratedReports] = useState<ReportResult[]>([]);
-
   const [isGeneratingAggregate, setIsGeneratingAggregate] = useState(false);
   const [aggregatedReport, setAggregatedReport] = useState<AggregatedReport | null>(null);
-
   const [emailHistory, setEmailHistory] = useState<Record<string, string>>({});
   const [sendingEmailFor, setSendingEmailFor] = useState<string | null>(null);
   const [emailInputs, setEmailInputs] = useState<Record<string, string>>({});
@@ -209,11 +234,7 @@ export default function App() {
   useEffect(() => {
     try {
       const saved = window.localStorage?.getItem('wl_email_history');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        setEmailHistory(parsed);
-        setEmailInputs(parsed);
-      }
+      if (saved) { const parsed = JSON.parse(saved); setEmailHistory(parsed); setEmailInputs(parsed); }
     } catch {}
   }, []);
 
@@ -289,7 +310,6 @@ export default function App() {
     const valid = projects.filter(p => p.name.trim());
     if (!clientName.trim() || valid.length === 0) return null;
     const formatted = clientName.includes('社') || clientName.includes('株式会社') ? clientName : `株式会社${clientName}`;
-
     const projectResults = await Promise.all(valid.map(async (proj) => {
       let reportText = proj.memo;
       try {
@@ -305,37 +325,20 @@ export default function App() {
         formatted_report: reportText,
       };
     }));
-
     try {
       const currentUser = (await supabase.auth.getUser()).data.user;
       let { data: cd, error: ce } = await supabase.from('clients').select('id').eq('name', formatted).single();
       if (ce && ce.code !== 'PGRST116') throw ce;
       let clientId;
-      if (cd) {
-        clientId = cd.id;
-      } else {
-        const { data: nc, error: ne } = await supabase.from('clients')
-          .insert([{ name: formatted, user_id: currentUser?.id }])
-          .select('id').single();
-        if (ne) throw ne;
-        clientId = nc.id;
+      if (cd) { clientId = cd.id; } else {
+        const { data: nc, error: ne } = await supabase.from('clients').insert([{ name: formatted, user_id: currentUser?.id }]).select('id').single();
+        if (ne) throw ne; clientId = nc.id;
       }
       for (const proj of projectResults) {
-        await supabase.from('daily_logs').insert([{
-          client_id: clientId,
-          duration_hours: proj.hours,
-          raw_input: proj.memo,
-          formatted_report: proj.formatted_report,
-        }]);
+        await supabase.from('daily_logs').insert([{ client_id: clientId, duration_hours: proj.hours, raw_input: proj.memo, formatted_report: proj.formatted_report }]);
       }
-      // 保存後にログ一覧を再取得
-      const { data: refreshed } = await supabase
-        .from('daily_logs')
-        .select('id, date, duration_hours, raw_input, formatted_report, created_at, clients(name)')
-        .order('created_at', { ascending: false });
-      if (refreshed) setSupabaseLogs(refreshed as any);
+      await fetchLogs();
     } catch (e) { console.warn('Supabase保存失敗:', e); }
-
     return { client: formatted, total_hours: projectResults.reduce((s, p) => s + p.hours, 0), projects: projectResults };
   };
 
@@ -345,11 +348,7 @@ export default function App() {
       const results: ReportResult[] = [];
       for (const tab of clientTabsData) {
         const r = await generateForClient(tab.clientName, tab.projects);
-        if (r) {
-          results.push(r);
-          saveReport(type, date, r);
-          if (tab.email.trim()) saveEmailForClient(r.client, tab.email.trim());
-        }
+        if (r) { results.push(r); saveReport(type, date, r); if (tab.email.trim()) saveEmailForClient(r.client, tab.email.trim()); }
       }
       if (results.length === 0) { alert('入力が不足しています。'); return; }
       setGeneratedReports(results);
@@ -363,16 +362,10 @@ export default function App() {
     for (const tab of clientTabsData) {
       const validProjects = tab.projects.filter(p => p.name.trim());
       if (!tab.clientName.trim() || validProjects.length === 0) continue;
-      const formatted = tab.clientName.includes('社') || tab.clientName.includes('株式会社')
-        ? tab.clientName : `株式会社${tab.clientName}`;
+      const formatted = tab.clientName.includes('社') || tab.clientName.includes('株式会社') ? tab.clientName : `株式会社${tab.clientName}`;
       const report: ReportResult = {
-        client: formatted,
-        total_hours: validProjects.reduce((s, p) => s + (Number(p.hours) || 0), 0),
-        projects: validProjects.map(p => ({
-          name: p.name, hours: Number(p.hours) || 0, progress: Number(p.progress) || 0,
-          memo: p.memo, links: p.links.split('\n').map(l => l.trim()).filter(Boolean),
-          formatted_report: p.memo,
-        })),
+        client: formatted, total_hours: validProjects.reduce((s, p) => s + (Number(p.hours) || 0), 0),
+        projects: validProjects.map(p => ({ name: p.name, hours: Number(p.hours) || 0, progress: Number(p.progress) || 0, memo: p.memo, links: p.links.split('\n').map(l => l.trim()).filter(Boolean), formatted_report: p.memo })),
       };
       saveReport(type, date, report);
       if (tab.email.trim()) saveEmailForClient(formatted, tab.email.trim());
@@ -392,7 +385,6 @@ export default function App() {
         .gte('created_at', start.toISOString().split('T')[0]).order('created_at', { ascending: true });
       if (error) throw error;
       if (!logs || logs.length === 0) { alert(`${period === 'week' ? '今週' : '今月'}のログがありません。`); return; }
-
       const clientMap: Record<string, { duration_hours: number; reports: string[]; links: string[] }> = {};
       logs.forEach(l => {
         const cname = (l.clients as any)?.name ?? '不明';
@@ -400,26 +392,17 @@ export default function App() {
         clientMap[cname].duration_hours += Number(l.duration_hours) || 0;
         if (l.formatted_report) clientMap[cname].reports.push(l.formatted_report);
       });
-
       const startStr = start.toISOString().split('T')[0];
-      const relevantSaved = savedReports.filter(sr => sr.date >= startStr);
-      relevantSaved.forEach(sr => {
+      savedReports.filter(sr => sr.date >= startStr).forEach(sr => {
         const cname = sr.report.client;
         if (!clientMap[cname]) clientMap[cname] = { duration_hours: 0, reports: [], links: [] };
-        sr.report.projects.forEach(p => {
-          p.links.forEach(l => { if (!clientMap[cname].links.includes(l)) clientMap[cname].links.push(l); });
-        });
+        sr.report.projects.forEach(p => { p.links.forEach(l => { if (!clientMap[cname].links.includes(l)) clientMap[cname].links.push(l); }); });
       });
-
       const clientEntries = Object.entries(clientMap);
       const totalHours = clientEntries.reduce((s, [, v]) => s + v.duration_hours, 0);
-
       const summaries = await Promise.all(clientEntries.map(async ([clientName, data]) => {
         try {
-          const res = await fetch('/api/generate', {
-            method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ type: 'aggregate_client', clientName, duration_hours: Math.round(data.duration_hours * 10) / 10, reports: data.reports }),
-          });
+          const res = await fetch('/api/generate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'aggregate_client', clientName, duration_hours: Math.round(data.duration_hours * 10) / 10, reports: data.reports }) });
           if (!res.ok) throw new Error('AI error');
           const aiData = await res.json();
           return { client_name: clientName, duration_hours: Math.round(data.duration_hours * 10) / 10, activities: aiData.activities || data.reports.slice(0, 5), summary: aiData.summary || '作業を実施しました。', links: data.links };
@@ -427,7 +410,6 @@ export default function App() {
           return { client_name: clientName, duration_hours: Math.round(data.duration_hours * 10) / 10, activities: data.reports.slice(0, 5), summary: `${clientName}に対して合計${Math.round(data.duration_hours * 10) / 10}時間の作業を実施しました。`, links: data.links };
         }
       }));
-
       setAggregatedReport({ total_duration_hours: Math.round(totalHours * 10) / 10, client_summaries: summaries });
     } catch (e) { console.error(e); alert('集計レポートの生成に失敗しました。'); }
     finally { setIsGeneratingAggregate(false); }
@@ -435,38 +417,21 @@ export default function App() {
 
   /* ═══════════════════ Shared UI Blocks ═══════════════════ */
 
-  const renderProjectCard = (
-    proj: ProjectEntry, idx: number,
-    onUpdate: (field: keyof ProjectEntry, val: string) => void,
-    onRemove: () => void, canRemove: boolean,
-  ) => (
+  const renderProjectCard = (proj: ProjectEntry, idx: number, onUpdate: (field: keyof ProjectEntry, val: string) => void, onRemove: () => void, canRemove: boolean) => (
     <div key={proj.id} className="rounded-xl border p-5 space-y-4" style={{ borderColor: '#E0F2FE', backgroundColor: '#F8FDFF' }}>
       <div className="flex items-center justify-between">
         <span className="text-xs font-semibold text-[#64748B] uppercase tracking-wider">Project {idx + 1}</span>
         {canRemove && <button onClick={onRemove} className="text-[#94A3B8] hover:text-red-500 transition-colors p-1"><Trash2 className="w-4 h-4" /></button>}
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-[1fr_110px_110px] gap-3">
-        <div className="space-y-1">
-          <label className="text-xs font-semibold text-[#64748B]">プロジェクト名</label>
-          <DInput type="text" value={proj.name} onChange={(e) => onUpdate('name', e.target.value)} placeholder="例: Webリニューアル" />
-        </div>
-        <div className="space-y-1">
-          <label className="text-xs font-semibold text-[#64748B] flex items-center"><Clock className="w-3 h-3 mr-1" />時間 (h)</label>
-          <DInput type="number" value={proj.hours} onChange={(e) => onUpdate('hours', e.target.value)} placeholder="1.5" min="0" step="0.1" />
-        </div>
-        <div className="space-y-1">
-          <label className="text-xs font-semibold text-[#64748B] flex items-center"><Target className="w-3 h-3 mr-1" />達成率 (%)</label>
-          <DInput type="number" value={proj.progress} onChange={(e) => onUpdate('progress', e.target.value)} placeholder="70" min="0" max="100" />
-        </div>
+        <div className="space-y-1"><label className="text-xs font-semibold text-[#64748B]">プロジェクト名</label><DInput type="text" value={proj.name} onChange={(e) => onUpdate('name', e.target.value)} placeholder="例: Webリニューアル" /></div>
+        <div className="space-y-1"><label className="text-xs font-semibold text-[#64748B] flex items-center"><Clock className="w-3 h-3 mr-1" />時間 (h)</label><DInput type="number" value={proj.hours} onChange={(e) => onUpdate('hours', e.target.value)} placeholder="1.5" min="0" step="0.1" /></div>
+        <div className="space-y-1"><label className="text-xs font-semibold text-[#64748B] flex items-center"><Target className="w-3 h-3 mr-1" />達成率 (%)</label><DInput type="number" value={proj.progress} onChange={(e) => onUpdate('progress', e.target.value)} placeholder="70" min="0" max="100" /></div>
       </div>
       {proj.progress && Number(proj.progress) > 0 && (
         <div className="space-y-1">
-          <div className="flex justify-between text-xs text-[#64748B]">
-            <span>進捗</span><span className="font-semibold" style={{ color: '#0EA5E9' }}>{proj.progress}%</span>
-          </div>
-          <div className="h-2 rounded-full" style={{ backgroundColor: '#E0F2FE' }}>
-            <div className="h-2 rounded-full transition-all duration-500" style={{ width: `${Math.min(Number(proj.progress), 100)}%`, backgroundColor: Number(proj.progress) >= 100 ? '#16A34A' : '#0EA5E9' }} />
-          </div>
+          <div className="flex justify-between text-xs text-[#64748B]"><span>進捗</span><span className="font-semibold" style={{ color: '#0EA5E9' }}>{proj.progress}%</span></div>
+          <div className="h-2 rounded-full" style={{ backgroundColor: '#E0F2FE' }}><div className="h-2 rounded-full transition-all duration-500" style={{ width: `${Math.min(Number(proj.progress), 100)}%`, backgroundColor: Number(proj.progress) >= 100 ? '#16A34A' : '#0EA5E9' }} /></div>
         </div>
       )}
       <div className="space-y-1">
@@ -486,33 +451,19 @@ export default function App() {
     </div>
   );
 
-  const renderClientTabForm = (
-    ct: ReturnType<typeof useClientTabs>,
-    periodHeader: React.ReactNode | null,
-    buttonLabel: string,
-    buttonIcon: React.ReactNode,
-    onSubmit: () => void,
-    valid: boolean,
-    onSaveDirect: () => void,
-  ) => (
+  const renderClientTabForm = (ct: ReturnType<typeof useClientTabs>, periodHeader: React.ReactNode | null, buttonLabel: string, buttonIcon: React.ReactNode, onSubmit: () => void, valid: boolean, onSaveDirect: () => void) => (
     <div className="rounded-xl p-6 md:p-8" style={{ backgroundColor: '#FFFFFF', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
       {periodHeader && <div className="mb-6">{periodHeader}</div>}
       <div className="flex items-center gap-1.5 mb-6 overflow-x-auto pb-2 -mx-1 px-1">
         {ct.tabs.map((tab, idx) => (
-          <div key={tab.id}
-            className="flex items-center shrink-0 rounded-lg border text-sm font-semibold transition-colors cursor-pointer"
+          <div key={tab.id} className="flex items-center shrink-0 rounded-lg border text-sm font-semibold transition-colors cursor-pointer"
             style={{ borderColor: ct.activeIdx === idx ? '#0EA5E9' : '#E0F2FE', backgroundColor: ct.activeIdx === idx ? '#F0F9FF' : '#FFFFFF', color: ct.activeIdx === idx ? '#0EA5E9' : '#64748B' }}
             onClick={() => ct.setActiveIdx(idx)}>
             <span className="px-3 py-2 flex items-center"><Building2 className="w-3.5 h-3.5 mr-1.5" />{tab.clientName || `顧客 ${idx + 1}`}</span>
-            {idx > 0 && (
-              <button onClick={(e) => { e.stopPropagation(); ct.remove(idx); }} className="pr-2.5 pl-0 py-2 hover:text-red-500 transition-colors">
-                <X className="w-3.5 h-3.5" />
-              </button>
-            )}
+            {idx > 0 && <button onClick={(e) => { e.stopPropagation(); ct.remove(idx); }} className="pr-2.5 pl-0 py-2 hover:text-red-500 transition-colors"><X className="w-3.5 h-3.5" /></button>}
           </div>
         ))}
-        <button onClick={ct.add} className="flex items-center shrink-0 px-3 py-2 rounded-lg border text-sm font-semibold transition-colors hover:bg-[#FFFDF7]"
-          style={{ borderColor: '#E0F2FE', color: '#64748B', borderStyle: 'dashed' }}>
+        <button onClick={ct.add} className="flex items-center shrink-0 px-3 py-2 rounded-lg border text-sm font-semibold transition-colors hover:bg-[#FFFDF7]" style={{ borderColor: '#E0F2FE', color: '#64748B', borderStyle: 'dashed' }}>
           <Plus className="w-3.5 h-3.5 mr-1" />顧客を追加
         </button>
       </div>
@@ -540,24 +491,17 @@ export default function App() {
               </button>
             </div>
             <div className="space-y-4">
-              {tab.projects.map((proj, pIdx) =>
-                renderProjectCard(proj, pIdx,
-                  (field, val) => ct.updateProject(ct.activeIdx, proj.id, field, val),
-                  () => ct.removeProject(ct.activeIdx, proj.id),
-                  tab.projects.length > 1)
-              )}
+              {tab.projects.map((proj, pIdx) => renderProjectCard(proj, pIdx, (field, val) => ct.updateProject(ct.activeIdx, proj.id, field, val), () => ct.removeProject(ct.activeIdx, proj.id), tab.projects.length > 1))}
             </div>
           </div>
         );
       })()}
       <div className="flex gap-3 mt-6">
-        <button onClick={onSaveDirect} disabled={!valid}
-          className="flex-1 flex items-center justify-center py-3.5 rounded-lg font-semibold text-sm transition-all"
+        <button onClick={onSaveDirect} disabled={!valid} className="flex-1 flex items-center justify-center py-3.5 rounded-lg font-semibold text-sm transition-all"
           style={{ backgroundColor: !valid ? '#E0F2FE' : '#FFFFFF', color: !valid ? '#94A3B8' : '#0EA5E9', border: '1px solid', borderColor: !valid ? '#E0F2FE' : '#0EA5E9', cursor: !valid ? 'not-allowed' : 'pointer' }}>
           <Save className="w-4 h-4 mr-2" />そのまま保存
         </button>
-        <button onClick={onSubmit} disabled={!valid || isGenerating}
-          className="flex-1 flex items-center justify-center py-3.5 rounded-lg text-white font-semibold text-sm transition-all"
+        <button onClick={onSubmit} disabled={!valid || isGenerating} className="flex-1 flex items-center justify-center py-3.5 rounded-lg text-white font-semibold text-sm transition-all"
           style={{ backgroundColor: !valid ? '#CBD5E1' : '#0EA5E9', cursor: !valid ? 'not-allowed' : 'pointer' }}
           onMouseEnter={(e) => { if (valid) e.currentTarget.style.backgroundColor = '#0284C7'; }}
           onMouseLeave={(e) => { if (valid) e.currentTarget.style.backgroundColor = '#0EA5E9'; }}>
@@ -602,28 +546,13 @@ export default function App() {
     const currentEmail = emailInputs[report.client] || emailHistory[report.client] || '';
     const isEmailOpen = sendingEmailFor === report.client;
     return (
-      <motion.div key={key} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
-        className="rounded-xl overflow-hidden" style={{ backgroundColor: '#FFFFFF', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+      <motion.div key={key} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="rounded-xl overflow-hidden" style={{ backgroundColor: '#FFFFFF', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
         <div className="px-6 py-4 flex items-center justify-between border-b flex-wrap gap-2" style={{ backgroundColor: '#F0F9FF', borderColor: '#BAE6FD' }}>
-          <div className="flex items-center font-semibold text-sm" style={{ color: '#0C4A6E' }}>
-            <CheckCircle2 className="w-5 h-5 mr-2" />{dispName} — レポート生成完了
-          </div>
+          <div className="flex items-center font-semibold text-sm" style={{ color: '#0C4A6E' }}><CheckCircle2 className="w-5 h-5 mr-2" />{dispName} — レポート生成完了</div>
           <div className="flex items-center gap-2">
-            {onSave && (
-              <button onClick={onSave} className="flex items-center text-xs font-semibold px-4 py-2 rounded-lg transition-all" style={{ backgroundColor: '#16A34A', color: '#FFFFFF' }}
-                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#15803D'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#16A34A'}>
-                <Save className="w-3.5 h-3.5 mr-1.5" />記録
-              </button>
-            )}
-            <button onClick={() => setSendingEmailFor(isEmailOpen ? null : report.client)}
-              className="flex items-center text-xs font-semibold px-4 py-2 rounded-lg transition-all"
-              style={{ backgroundColor: isEmailOpen ? '#0284C7' : '#FFFFFF', color: isEmailOpen ? '#FFFFFF' : '#0EA5E9', border: '1px solid #0EA5E9' }}>
-              <Mail className="w-3.5 h-3.5 mr-1.5" />メール
-            </button>
-            <button onClick={() => handleDownloadPdf(report)} className="flex items-center text-xs font-semibold px-4 py-2 rounded-lg transition-all" style={{ backgroundColor: '#0EA5E9', color: '#FFFFFF' }}
-              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#0284C7'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#0EA5E9'}>
-              <FileText className="w-3.5 h-3.5 mr-1.5" />PDF
-            </button>
+            {onSave && <button onClick={onSave} className="flex items-center text-xs font-semibold px-4 py-2 rounded-lg transition-all" style={{ backgroundColor: '#16A34A', color: '#FFFFFF' }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#15803D'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#16A34A'}><Save className="w-3.5 h-3.5 mr-1.5" />記録</button>}
+            <button onClick={() => setSendingEmailFor(isEmailOpen ? null : report.client)} className="flex items-center text-xs font-semibold px-4 py-2 rounded-lg transition-all" style={{ backgroundColor: isEmailOpen ? '#0284C7' : '#FFFFFF', color: isEmailOpen ? '#FFFFFF' : '#0EA5E9', border: '1px solid #0EA5E9' }}><Mail className="w-3.5 h-3.5 mr-1.5" />メール</button>
+            <button onClick={() => handleDownloadPdf(report)} className="flex items-center text-xs font-semibold px-4 py-2 rounded-lg transition-all" style={{ backgroundColor: '#0EA5E9', color: '#FFFFFF' }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#0284C7'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#0EA5E9'}><FileText className="w-3.5 h-3.5 mr-1.5" />PDF</button>
           </div>
         </div>
         <AnimatePresence>
@@ -631,16 +560,9 @@ export default function App() {
             <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
               <div className="px-6 py-4 border-b flex items-center gap-3 flex-wrap" style={{ backgroundColor: '#FFFDF7', borderColor: '#E0F2FE' }}>
                 <Mail className="w-4 h-4 shrink-0" style={{ color: '#64748B' }} />
-                <div className="flex-1 min-w-[200px]">
-                  <DInput type="email" value={currentEmail} onChange={(e) => setEmailInputs(prev => ({ ...prev, [report.client]: e.target.value }))} placeholder="example@company.co.jp" />
-                </div>
-                {emailHistory[report.client] && emailHistory[report.client] !== currentEmail && (
-                  <button onClick={() => setEmailInputs(prev => ({ ...prev, [report.client]: emailHistory[report.client] }))} className="text-xs text-[#64748B] underline shrink-0">前回: {emailHistory[report.client]}</button>
-                )}
-                <button onClick={() => handleSendEmail(report)} className="flex items-center text-xs font-semibold px-4 py-2.5 rounded-lg transition-all shrink-0" style={{ backgroundColor: '#0EA5E9', color: '#FFFFFF' }}
-                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#0284C7'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#0EA5E9'}>
-                  <Send className="w-3.5 h-3.5 mr-1.5" />送信
-                </button>
+                <div className="flex-1 min-w-[200px]"><DInput type="email" value={currentEmail} onChange={(e) => setEmailInputs(prev => ({ ...prev, [report.client]: e.target.value }))} placeholder="example@company.co.jp" /></div>
+                {emailHistory[report.client] && emailHistory[report.client] !== currentEmail && <button onClick={() => setEmailInputs(prev => ({ ...prev, [report.client]: emailHistory[report.client] }))} className="text-xs text-[#64748B] underline shrink-0">前回: {emailHistory[report.client]}</button>}
+                <button onClick={() => handleSendEmail(report)} className="flex items-center text-xs font-semibold px-4 py-2.5 rounded-lg transition-all shrink-0" style={{ backgroundColor: '#0EA5E9', color: '#FFFFFF' }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#0284C7'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#0EA5E9'}><Send className="w-3.5 h-3.5 mr-1.5" />送信</button>
               </div>
             </motion.div>
           )}
@@ -662,16 +584,12 @@ export default function App() {
                   <span className="text-xs font-semibold px-2.5 py-1 rounded-md" style={{ backgroundColor: '#F0F9FF', color: proj.progress >= 100 ? '#16A34A' : '#0EA5E9' }}><Target className="w-3 h-3 inline mr-1" />{proj.progress}%</span>
                 </div>
               </div>
-              <div className="h-2 rounded-full" style={{ backgroundColor: '#E0F2FE' }}>
-                <div className="h-2 rounded-full transition-all duration-500" style={{ width: `${Math.min(proj.progress, 100)}%`, backgroundColor: proj.progress >= 100 ? '#16A34A' : '#0EA5E9' }} />
-              </div>
+              <div className="h-2 rounded-full" style={{ backgroundColor: '#E0F2FE' }}><div className="h-2 rounded-full transition-all duration-500" style={{ width: `${Math.min(proj.progress, 100)}%`, backgroundColor: proj.progress >= 100 ? '#16A34A' : '#0EA5E9' }} /></div>
               <p className="text-sm text-[#475569] leading-relaxed">{proj.formatted_report}</p>
               {proj.links.length > 0 && (
                 <div className="flex items-start gap-2 pt-1">
                   <Link2 className="w-3.5 h-3.5 mt-0.5 shrink-0" style={{ color: '#64748B' }} />
-                  <div className="space-y-0.5">
-                    {proj.links.map((link, li) => <a key={li} href={link} target="_blank" rel="noopener noreferrer" className="block text-xs truncate" style={{ color: '#0EA5E9' }}>{link}</a>)}
-                  </div>
+                  <div className="space-y-0.5">{proj.links.map((link, li) => <a key={li} href={link} target="_blank" rel="noopener noreferrer" className="block text-xs truncate" style={{ color: '#0EA5E9' }}>{link}</a>)}</div>
                 </div>
               )}
             </div>
@@ -681,42 +599,77 @@ export default function App() {
     );
   };
 
-  /* ── Supabaseログ一覧表示 ── */
+  /* ── Supabaseログ一覧（編集・削除つき） ── */
   const renderSupabaseLogList = () => {
     if (supabaseLogs.length === 0) return (
-      <div className="rounded-xl p-8 text-center text-sm text-[#94A3B8]"
-        style={{ backgroundColor: '#FFFFFF', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+      <div className="rounded-xl p-8 text-center text-sm text-[#94A3B8]" style={{ backgroundColor: '#FFFFFF', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
         まだ記録がありません
       </div>
     );
     return (
       <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#FFFFFF', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
         <div className="p-5 border-b flex items-center justify-between" style={{ borderColor: '#F0F9FF', backgroundColor: '#F8FDFF' }}>
-          <h2 className="text-sm font-semibold text-[#0F172A] flex items-center">
-            <History className="w-4 h-4 mr-2" style={{ color: '#0EA5E9' }} />Supabase記録一覧
-          </h2>
-          <span className="text-xs font-semibold px-3 py-1 rounded-md border" style={{ borderColor: '#E0F2FE', color: '#64748B' }}>
-            {supabaseLogs.length} 件
-          </span>
+          <h2 className="text-sm font-semibold text-[#0F172A] flex items-center"><History className="w-4 h-4 mr-2" style={{ color: '#0EA5E9' }} />Supabase記録一覧</h2>
+          <span className="text-xs font-semibold px-3 py-1 rounded-md border" style={{ borderColor: '#E0F2FE', color: '#64748B' }}>{supabaseLogs.length} 件</span>
         </div>
         <div>
           {supabaseLogs.map((log, idx) => {
             const clientName = (log.clients as any)?.name ?? '不明';
             const dispName = displayClient(clientName);
             const dateStr = log.date || log.created_at?.split('T')[0] || '';
+            const isEditing = editingLogId === log.id;
             return (
               <div key={log.id} style={{ borderBottom: idx < supabaseLogs.length - 1 ? '1px solid #F0F9FF' : 'none' }}>
                 <div className="p-5 hover:bg-[#FFFDF7] transition-colors">
-                  <div className="flex items-center gap-2 flex-wrap mb-2">
-                    <span className="px-2.5 py-1 rounded-md text-xs font-semibold" style={{ backgroundColor: '#F0F9FF', color: '#64748B' }}>{dateStr}</span>
-                    <span className="font-semibold text-sm text-[#0F172A]">{dispName}</span>
-                    <span className="text-xs font-semibold px-2 py-0.5 rounded-md" style={{ backgroundColor: '#F0F9FF', color: '#0EA5E9' }}>
-                      <Clock className="w-3 h-3 inline mr-1" />{log.duration_hours}h
-                    </span>
+                  {/* ヘッダー行 */}
+                  <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="px-2.5 py-1 rounded-md text-xs font-semibold" style={{ backgroundColor: '#F0F9FF', color: '#64748B' }}>{dateStr}</span>
+                      <span className="font-semibold text-sm text-[#0F172A]">{dispName}</span>
+                      <span className="text-xs font-semibold px-2 py-0.5 rounded-md" style={{ backgroundColor: '#F0F9FF', color: '#0EA5E9' }}>
+                        <Clock className="w-3 h-3 inline mr-1" />{log.duration_hours}h
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <button onClick={() => isEditing ? setEditingLogId(null) : handleEditLog(log)}
+                        className="p-1.5 rounded-md transition-colors" style={{ color: isEditing ? '#0EA5E9' : '#64748B' }} title="編集">
+                        <Pencil className="w-3.5 h-3.5" />
+                      </button>
+                      <button onClick={() => handleDeleteLog(log.id)}
+                        className="p-1.5 rounded-md transition-colors hover:text-red-500" style={{ color: '#94A3B8' }} title="削除">
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
                   </div>
-                  <p className="text-sm text-[#475569] leading-relaxed line-clamp-2">
-                    {log.formatted_report || log.raw_input || '（内容なし）'}
-                  </p>
+                  {/* 編集フォーム or 表示 */}
+                  {isEditing ? (
+                    <div className="space-y-3 mt-3 rounded-lg border p-4" style={{ borderColor: '#E0F2FE', backgroundColor: '#F8FDFF' }}>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-1">
+                          <label className="text-xs font-semibold text-[#64748B]">日付</label>
+                          <DInput type="date" value={editingLog.date || ''} onChange={(e) => setEditingLog(prev => ({ ...prev, date: e.target.value }))} />
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-xs font-semibold text-[#64748B]">時間 (h)</label>
+                          <DInput type="number" value={String(editingLog.duration_hours || '')} onChange={(e) => setEditingLog(prev => ({ ...prev, duration_hours: Number(e.target.value) }))} step="0.1" min="0" />
+                        </div>
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-xs font-semibold text-[#64748B]">報告内容</label>
+                        <DTextarea value={editingLog.formatted_report || ''} onChange={(e) => setEditingLog(prev => ({ ...prev, formatted_report: e.target.value }))} rows={4} />
+                      </div>
+                      <div className="flex justify-end gap-2">
+                        <button onClick={() => setEditingLogId(null)} className="text-xs font-semibold px-4 py-2 rounded-lg border" style={{ borderColor: '#E0F2FE', color: '#64748B' }}>キャンセル</button>
+                        <button onClick={() => handleSaveLog(log.id)} className="flex items-center text-xs font-semibold px-4 py-2 rounded-lg" style={{ backgroundColor: '#0EA5E9', color: '#FFFFFF' }}>
+                          <Save className="w-3.5 h-3.5 mr-1.5" />保存
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-[#475569] leading-relaxed line-clamp-2">
+                      {log.formatted_report || log.raw_input || '（内容なし）'}
+                    </p>
+                  )}
                 </div>
               </div>
             );
@@ -775,8 +728,7 @@ export default function App() {
                   ))}
                   {isEditing && (
                     <div className="flex justify-end mt-2">
-                      <button onClick={() => { const sr2 = savedReports.find(r => r.id === sr.id); if (sr2) updateSavedReport(sr.id, sr2.report); }}
-                        className="flex items-center text-xs font-semibold px-4 py-2 rounded-lg" style={{ backgroundColor: '#0EA5E9', color: '#FFFFFF' }}>
+                      <button onClick={() => { const sr2 = savedReports.find(r => r.id === sr.id); if (sr2) updateSavedReport(sr.id, sr2.report); }} className="flex items-center text-xs font-semibold px-4 py-2 rounded-lg" style={{ backgroundColor: '#0EA5E9', color: '#FFFFFF' }}>
                         <Save className="w-3.5 h-3.5 mr-1.5" />保存
                       </button>
                     </div>
@@ -791,7 +743,6 @@ export default function App() {
   };
 
   /* ═══════════════════ 認証チェック ═══════════════════ */
-
   if (authLoading) return (
     <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#FFFDF7' }}>
       <p className="text-sm text-[#64748B]">読み込み中...</p>
@@ -801,15 +752,11 @@ export default function App() {
   if (!user) return (
     <div className="min-h-screen flex flex-col items-center justify-center" style={{ backgroundColor: '#FFFDF7' }}>
       <div className="text-center space-y-6 p-10 rounded-2xl" style={{ backgroundColor: '#FFFFFF', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
-        <div className="inline-flex items-center justify-center w-14 h-14 rounded-xl" style={{ backgroundColor: '#F0F9FF', color: '#0EA5E9' }}>
-          <Sparkles className="w-7 h-7" />
-        </div>
+        <div className="inline-flex items-center justify-center w-14 h-14 rounded-xl" style={{ backgroundColor: '#F0F9FF', color: '#0EA5E9' }}><Sparkles className="w-7 h-7" /></div>
         <h1 className="text-2xl font-semibold text-[#0F172A]">AI Work Log Assistant</h1>
         <p className="text-sm text-[#64748B]">Googleアカウントでログインしてください</p>
-        <button onClick={handleLogin} className="w-full py-3 px-6 rounded-lg font-semibold text-sm text-white transition-all"
-          style={{ backgroundColor: '#0EA5E9' }}
-          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#0284C7'}
-          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#0EA5E9'}>
+        <button onClick={handleLogin} className="w-full py-3 px-6 rounded-lg font-semibold text-sm text-white transition-all" style={{ backgroundColor: '#0EA5E9' }}
+          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#0284C7'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#0EA5E9'}>
           Googleでログイン
         </button>
       </div>
@@ -823,17 +770,13 @@ export default function App() {
         <header className="text-center space-y-6">
           <div className="flex justify-end items-center gap-3">
             <span className="text-xs text-[#94A3B8]">{user.email}</span>
-            <button onClick={handleLogout} className="text-xs font-semibold px-3 py-1.5 rounded-lg border transition-colors"
-              style={{ borderColor: '#E0F2FE', color: '#64748B' }}
-              onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#F0F9FF'; }}
-              onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}>
+            <button onClick={handleLogout} className="text-xs font-semibold px-3 py-1.5 rounded-lg border transition-colors" style={{ borderColor: '#E0F2FE', color: '#64748B' }}
+              onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#F0F9FF'; }} onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}>
               ログアウト
             </button>
           </div>
           <div>
-            <div className="inline-flex items-center justify-center w-14 h-14 rounded-xl mb-4" style={{ backgroundColor: '#F0F9FF', color: '#0EA5E9' }}>
-              <Sparkles className="w-7 h-7" />
-            </div>
+            <div className="inline-flex items-center justify-center w-14 h-14 rounded-xl mb-4" style={{ backgroundColor: '#F0F9FF', color: '#0EA5E9' }}><Sparkles className="w-7 h-7" /></div>
             <h1 className="text-3xl font-semibold tracking-tight text-[#0F172A]">AI Work Log Assistant</h1>
             <p className="text-[#64748B] mt-2 text-sm">日々の作業記録と、プロフェッショナルな報告書の自動生成</p>
           </div>
@@ -964,15 +907,8 @@ export default function App() {
                               <span className="text-xs font-semibold px-2.5 py-1 rounded-md" style={{ backgroundColor: '#E0F2FE', color: '#0EA5E9' }}><Clock className="w-3 h-3 inline mr-1" />{s.duration_hours} h</span>
                             </div>
                             <div className="flex items-center gap-2">
-                              <button onClick={() => setSendingEmailFor(isEmailOpen ? null : `agg_${s.client_name}`)}
-                                className="flex items-center text-xs font-semibold px-3 py-2 rounded-lg transition-all"
-                                style={{ backgroundColor: isEmailOpen ? '#0284C7' : '#FFFFFF', color: isEmailOpen ? '#FFFFFF' : '#0EA5E9', border: '1px solid #0EA5E9' }}>
-                                <Mail className="w-3.5 h-3.5 mr-1" />メール
-                              </button>
-                              <button onClick={handleClientPdf} className="flex items-center text-xs font-semibold px-3 py-2 rounded-lg transition-all" style={{ backgroundColor: '#0EA5E9', color: '#FFFFFF' }}
-                                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#0284C7'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#0EA5E9'}>
-                                <FileText className="w-3.5 h-3.5 mr-1" />PDF
-                              </button>
+                              <button onClick={() => setSendingEmailFor(isEmailOpen ? null : `agg_${s.client_name}`)} className="flex items-center text-xs font-semibold px-3 py-2 rounded-lg transition-all" style={{ backgroundColor: isEmailOpen ? '#0284C7' : '#FFFFFF', color: isEmailOpen ? '#FFFFFF' : '#0EA5E9', border: '1px solid #0EA5E9' }}><Mail className="w-3.5 h-3.5 mr-1" />メール</button>
+                              <button onClick={handleClientPdf} className="flex items-center text-xs font-semibold px-3 py-2 rounded-lg transition-all" style={{ backgroundColor: '#0EA5E9', color: '#FFFFFF' }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#0284C7'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#0EA5E9'}><FileText className="w-3.5 h-3.5 mr-1" />PDF</button>
                             </div>
                           </div>
                           <AnimatePresence>
@@ -981,9 +917,7 @@ export default function App() {
                                 <div className="px-6 py-4 border-b flex items-center gap-3 flex-wrap" style={{ backgroundColor: '#FFFDF7', borderColor: '#E0F2FE' }}>
                                   <div className="flex-1 min-w-[200px]"><DInput type="email" value={emailInputs[s.client_name] || ''} onChange={(e) => setEmailInputs(prev => ({ ...prev, [s.client_name]: e.target.value }))} placeholder="example@company.co.jp" /></div>
                                   {emailHistory[s.client_name] && <button onClick={() => setEmailInputs(prev => ({ ...prev, [s.client_name]: emailHistory[s.client_name] }))} className="text-xs shrink-0" style={{ color: '#0EA5E9' }}>前回: {emailHistory[s.client_name]}</button>}
-                                  <button onClick={handleClientEmail} className="flex items-center text-xs font-semibold px-4 py-2.5 rounded-lg shrink-0" style={{ backgroundColor: '#0EA5E9', color: '#FFFFFF' }}>
-                                    <Send className="w-3.5 h-3.5 mr-1.5" />送信
-                                  </button>
+                                  <button onClick={handleClientEmail} className="flex items-center text-xs font-semibold px-4 py-2.5 rounded-lg shrink-0" style={{ backgroundColor: '#0EA5E9', color: '#FFFFFF' }}><Send className="w-3.5 h-3.5 mr-1.5" />送信</button>
                                 </div>
                               </motion.div>
                             )}
@@ -1018,12 +952,10 @@ export default function App() {
                       <h2 className="text-sm font-semibold text-[#0F172A] flex items-center"><History className="w-4 h-4 mr-2" style={{ color: '#0EA5E9' }} />記録済みログ</h2>
                       <div className="flex items-center gap-1 p-0.5 rounded-lg border" style={{ borderColor: '#E0F2FE' }}>
                         {logTypes.map(t => (
-                          <button key={t.key} onClick={() => setDashLogTab(t.key)}
-                            className="flex items-center px-3 py-1.5 rounded-md text-xs font-semibold transition-colors"
+                          <button key={t.key} onClick={() => setDashLogTab(t.key)} className="flex items-center px-3 py-1.5 rounded-md text-xs font-semibold transition-colors"
                             style={{ backgroundColor: dashLogTab === t.key ? '#0EA5E9' : 'transparent', color: dashLogTab === t.key ? '#FFFFFF' : '#64748B' }}>
                             {t.icon}{t.label}
-                            <span className="ml-1.5 px-1.5 py-0.5 rounded text-[10px] font-bold"
-                              style={{ backgroundColor: dashLogTab === t.key ? 'rgba(255,255,255,0.25)' : '#F0F9FF', color: dashLogTab === t.key ? '#FFFFFF' : '#94A3B8' }}>
+                            <span className="ml-1.5 px-1.5 py-0.5 rounded text-[10px] font-bold" style={{ backgroundColor: dashLogTab === t.key ? 'rgba(255,255,255,0.25)' : '#F0F9FF', color: dashLogTab === t.key ? '#FFFFFF' : '#94A3B8' }}>
                               {savedReports.filter(r => r.type === t.key).length}
                             </span>
                           </button>
@@ -1049,14 +981,8 @@ export default function App() {
                                     <span className="text-xs font-semibold px-2 py-0.5 rounded-md" style={{ backgroundColor: '#F0F9FF', color: '#0EA5E9' }}>{sr.report.total_hours}h / {sr.report.projects.length}件</span>
                                   </div>
                                   <div className="flex items-center gap-1.5">
-                                    <button onClick={() => setSendingEmailFor(srEmailOpen ? null : `saved_${sr.id}`)}
-                                      className="flex items-center text-xs font-semibold px-2.5 py-1.5 rounded-md transition-all"
-                                      style={{ backgroundColor: srEmailOpen ? '#0284C7' : '#FFFFFF', color: srEmailOpen ? '#FFFFFF' : '#0EA5E9', border: '1px solid #0EA5E9' }}>
-                                      <Mail className="w-3 h-3 mr-1" />メール
-                                    </button>
-                                    <button onClick={() => handleDownloadPdf(sr.report)} className="flex items-center text-xs font-semibold px-2.5 py-1.5 rounded-md" style={{ backgroundColor: '#0EA5E9', color: '#FFFFFF' }}>
-                                      <FileText className="w-3 h-3 mr-1" />PDF
-                                    </button>
+                                    <button onClick={() => setSendingEmailFor(srEmailOpen ? null : `saved_${sr.id}`)} className="flex items-center text-xs font-semibold px-2.5 py-1.5 rounded-md transition-all" style={{ backgroundColor: srEmailOpen ? '#0284C7' : '#FFFFFF', color: srEmailOpen ? '#FFFFFF' : '#0EA5E9', border: '1px solid #0EA5E9' }}><Mail className="w-3 h-3 mr-1" />メール</button>
+                                    <button onClick={() => handleDownloadPdf(sr.report)} className="flex items-center text-xs font-semibold px-2.5 py-1.5 rounded-md" style={{ backgroundColor: '#0EA5E9', color: '#FFFFFF' }}><FileText className="w-3 h-3 mr-1" />PDF</button>
                                     <button onClick={() => setEditingReportId(isEditing ? null : sr.id)} className="p-1.5 rounded-md" style={{ color: '#64748B' }}><Pencil className="w-3.5 h-3.5" /></button>
                                     <button onClick={() => deleteReport(sr.id)} className="p-1.5 rounded-md hover:text-red-500" style={{ color: '#94A3B8' }}><Trash2 className="w-3.5 h-3.5" /></button>
                                   </div>
@@ -1067,9 +993,7 @@ export default function App() {
                                       <div className="mt-3 p-3 rounded-lg border flex items-center gap-3 flex-wrap" style={{ borderColor: '#E0F2FE', backgroundColor: '#FFFDF7' }}>
                                         <div className="flex-1 min-w-[180px]"><DInput type="email" value={emailInputs[sr.report.client] || ''} onChange={(e) => setEmailInputs(prev => ({ ...prev, [sr.report.client]: e.target.value }))} placeholder="example@company.co.jp" /></div>
                                         {emailHistory[sr.report.client] && <button onClick={() => setEmailInputs(prev => ({ ...prev, [sr.report.client]: emailHistory[sr.report.client] }))} className="text-xs shrink-0" style={{ color: '#0EA5E9' }}>前回のアドレス</button>}
-                                        <button onClick={() => handleSendEmail(sr.report)} className="flex items-center text-xs font-semibold px-3 py-2 rounded-lg shrink-0" style={{ backgroundColor: '#0EA5E9', color: '#FFFFFF' }}>
-                                          <Send className="w-3 h-3 mr-1" />送信
-                                        </button>
+                                        <button onClick={() => handleSendEmail(sr.report)} className="flex items-center text-xs font-semibold px-3 py-2 rounded-lg shrink-0" style={{ backgroundColor: '#0EA5E9', color: '#FFFFFF' }}><Send className="w-3 h-3 mr-1" />送信</button>
                                       </div>
                                     </motion.div>
                                   )}
@@ -1098,9 +1022,7 @@ export default function App() {
                                                     <span className="text-xs font-semibold px-2 py-0.5 rounded-md" style={{ backgroundColor: '#F0F9FF', color: p.progress >= 100 ? '#16A34A' : '#0EA5E9' }}>{p.progress}%</span>
                                                   </div>
                                                 </div>
-                                                <div className="h-1.5 rounded-full" style={{ backgroundColor: '#E0F2FE' }}>
-                                                  <div className="h-1.5 rounded-full" style={{ width: `${Math.min(p.progress, 100)}%`, backgroundColor: p.progress >= 100 ? '#16A34A' : '#0EA5E9' }} />
-                                                </div>
+                                                <div className="h-1.5 rounded-full" style={{ backgroundColor: '#E0F2FE' }}><div className="h-1.5 rounded-full" style={{ width: `${Math.min(p.progress, 100)}%`, backgroundColor: p.progress >= 100 ? '#16A34A' : '#0EA5E9' }} /></div>
                                                 <p className="text-sm text-[#475569] leading-relaxed">{p.formatted_report}</p>
                                                 {p.links.length > 0 && (
                                                   <div className="flex items-start gap-2 pt-1">
@@ -1114,8 +1036,7 @@ export default function App() {
                                         ))}
                                         {isEditing && (
                                           <div className="flex justify-end">
-                                            <button onClick={() => { const sr2 = savedReports.find(r => r.id === sr.id); if (sr2) updateSavedReport(sr.id, sr2.report); }}
-                                              className="flex items-center text-xs font-semibold px-4 py-2 rounded-lg" style={{ backgroundColor: '#0EA5E9', color: '#FFFFFF' }}>
+                                            <button onClick={() => { const sr2 = savedReports.find(r => r.id === sr.id); if (sr2) updateSavedReport(sr.id, sr2.report); }} className="flex items-center text-xs font-semibold px-4 py-2 rounded-lg" style={{ backgroundColor: '#0EA5E9', color: '#FFFFFF' }}>
                                               <Save className="w-3.5 h-3.5 mr-1.5" />保存
                                             </button>
                                           </div>
