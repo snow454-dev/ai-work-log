@@ -8,6 +8,47 @@ export async function POST(req: Request) {
     const body = await req.json();
     const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
+    // ━━━ 画像スキャン（書類読み取り） ━━━
+    if (body.type === 'image_scan') {
+      const { image, mimeType } = body;
+
+      const prompt = `あなたは日本の業務書類を読み取るOCRアシスタントです。
+この画像は業務報告書、日報、工事日誌、作業報告、HACCP記録、またはその他の業務書類です。
+
+画像から以下の情報を読み取り、JSON形式のみで出力してください。
+マークダウンや他のテキストは一切含めないでください。
+読み取れない項目は空文字にしてください。
+
+{
+  "client_name": "顧客名・会社名・現場名（読み取れた場合）",
+  "projects": [
+    {
+      "name": "作業名・プロジェクト名・工程名",
+      "hours": 作業時間（数値、不明なら0）,
+      "progress": 進捗率（0-100の数値、不明なら0）,
+      "memo": "作業内容・備考・記録内容をできるだけ詳しく"
+    }
+  ]
+}
+
+複数の作業項目がある場合はprojects配列に複数入れてください。
+表形式の場合は各行を1つのprojectとして抽出してください。`;
+
+      const result = await model.generateContent([
+        { inlineData: { data: image, mimeType: mimeType || 'image/jpeg' } },
+        { text: prompt },
+      ]);
+      const text = result.response.text();
+
+      const jsonMatch = text.match(/```json\s*([\s\S]*?)```/) || text.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) {
+        return NextResponse.json({ client_name: '', projects: [{ name: '', hours: 0, progress: 0, memo: text }] });
+      }
+      const jsonStr = jsonMatch[1] ?? jsonMatch[0];
+      const parsed = JSON.parse(jsonStr);
+      return NextResponse.json(parsed);
+    }
+
     // ━━━ 顧客別集計（フロントエンドでマージ済み → AIは総括のみ） ━━━
     if (body.type === 'aggregate_client') {
       const { clientName, duration_hours, reports } = body;
