@@ -119,6 +119,9 @@ export default function App() {
   const [editingReportId, setEditingReportId] = useState<string | null>(null);
   const [dashboardLogTab, setDashboardLogTab] = useState<'daily' | 'weekly' | 'monthly'>('daily');
   const [expandedReportId, setExpandedReportId] = useState<string | null>(null);
+  const [dashFilterDate, setDashFilterDate] = useState('');
+  const [dashFilterWeekStart, setDashFilterWeekStart] = useState('');
+  const [dashFilterMonth, setDashFilterMonth] = useState('');
 
   // localStorage から読み込み
   useEffect(() => {
@@ -703,6 +706,66 @@ export default function App() {
     printWindow.onload = () => { printWindow.print(); };
   };
 
+  const handleBulkDownloadPdf = (type: 'daily' | 'weekly' | 'monthly', reports: SavedReport[], dateLabel: string) => {
+    if (reports.length === 0) return;
+    const typeLabel = type === 'daily' ? '日報' : type === 'weekly' ? '週報' : '月報';
+    const filename = `${typeLabel}_${dateLabel}`;
+
+    const allSections = reports.map((sr, si) => {
+      const dispName = displayClient(sr.report.client);
+      const projectRows = sr.report.projects.map(p => `
+        <tr>
+          <td style="padding:10px 12px;border-bottom:1px solid #E0F2FE;font-size:13px;">${p.name}</td>
+          <td style="padding:10px 12px;border-bottom:1px solid #E0F2FE;font-size:13px;text-align:center;">${p.hours}h</td>
+          <td style="padding:10px 12px;border-bottom:1px solid #E0F2FE;font-size:13px;text-align:center;">${p.progress}%</td>
+          <td style="padding:10px 12px;border-bottom:1px solid #E0F2FE;font-size:13px;line-height:1.6;">${p.formatted_report}</td>
+        </tr>
+        ${p.links.length > 0 ? `<tr><td colspan="4" style="padding:6px 12px 10px;border-bottom:1px solid #E0F2FE;font-size:11px;color:#64748B;">参考: ${p.links.map(l => `<a href="${l}" style="color:#0EA5E9;">${l}</a>`).join(', ')}</td></tr>` : ''}
+      `).join('');
+      const pageBreak = si < reports.length - 1 ? '<div style="page-break-after:always;"></div>' : '';
+      return `
+        <div class="client-section">
+          <div class="client-meta">
+            <div><strong>宛先:</strong> ${dispName}</div>
+            <div><strong>対象日:</strong> ${sr.date}</div>
+          </div>
+          <div class="summary"><span>合計作業時間</span><br/><strong>${sr.report.total_hours} h</strong></div>
+          <table><thead><tr>
+            <th>プロジェクト</th>
+            <th style="text-align:center;width:70px;">時間</th>
+            <th style="text-align:center;width:70px;">達成率</th>
+            <th>報告内容</th>
+          </tr></thead><tbody>${projectRows}</tbody></table>
+        </div>
+        ${pageBreak}
+      `;
+    }).join('');
+
+    const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${filename}</title>
+    <style>@page{size:A4;margin:20mm;}body{font-family:"Hiragino Kaku Gothic ProN","Meiryo",sans-serif;color:#1E293B;line-height:1.6;margin:0;padding:0;}
+    .header{text-align:center;border-bottom:3px solid #0EA5E9;padding-bottom:16px;margin-bottom:24px;}
+    .header h1{font-size:20px;color:#0F172A;margin:0 0 4px;}
+    .client-section{margin-bottom:24px;}
+    .client-meta{display:flex;justify-content:space-between;margin-bottom:16px;font-size:13px;color:#64748B;}
+    .summary{margin-bottom:16px;padding:14px;background:#FFFDF7;border-radius:8px;border:1px solid #E0F2FE;}
+    .summary span{font-size:12px;color:#64748B;}.summary strong{font-size:22px;color:#0EA5E9;}
+    table{width:100%;border-collapse:collapse;margin-top:12px;}
+    th{background:#F0F9FF;padding:10px 12px;text-align:left;font-size:12px;color:#64748B;font-weight:600;border-bottom:2px solid #E0F2FE;}
+    </style></head><body>
+    <div class="header">
+      <h1>${typeLabel} 一括レポート</h1>
+      <p style="color:#64748B;font-size:13px;margin:0;">${dateLabel} — ${reports.length}件</p>
+    </div>
+    ${allSections}
+    </body></html>`;
+
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) { alert('ポップアップがブロックされました。許可してください。'); return; }
+    printWindow.document.write(html);
+    printWindow.document.close();
+    printWindow.onload = () => { printWindow.print(); };
+  };
+
   const renderReportResult = (report: ReportResult, key: number, onSave?: () => void) => {
     const dispName = displayClient(report.client);
     const currentEmail = emailInputs[report.client] || emailHistory[report.client] || '';
@@ -1155,7 +1218,18 @@ export default function App() {
                   { key: 'monthly' as const, label: '月報', icon: <CalendarDays className="w-3.5 h-3.5 mr-1" /> },
                 ];
                 const [dashLogTab, setDashLogTab] = [dashboardLogTab, setDashboardLogTab];
-                const filtered = savedReports.filter(r => r.type === dashLogTab);
+                const allOfType = savedReports.filter(r => r.type === dashLogTab);
+                const filtered = allOfType.filter(sr => {
+                  if (dashLogTab === 'daily' && dashFilterDate) return sr.date === dashFilterDate;
+                  if (dashLogTab === 'weekly' && dashFilterWeekStart) return sr.date === dashFilterWeekStart;
+                  if (dashLogTab === 'monthly' && dashFilterMonth) return sr.date.startsWith(dashFilterMonth);
+                  return true;
+                });
+                const bulkDateLabel = dashLogTab === 'daily'
+                  ? (dashFilterDate || new Date().toISOString().split('T')[0])
+                  : dashLogTab === 'weekly'
+                  ? (dashFilterWeekStart || new Date().toISOString().split('T')[0])
+                  : (dashFilterMonth || `${new Date().getFullYear()}-${String(new Date().getMonth()+1).padStart(2,'0')}`);
 
                 return (
                   <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#FFFFFF', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
@@ -1176,6 +1250,55 @@ export default function App() {
                             </span>
                           </button>
                         ))}
+                      </div>
+                    </div>
+
+                    {/* フィルター & 一括ダウンロード */}
+                    <div className="px-4 py-3 border-b flex items-center gap-3 flex-wrap" style={{ borderColor: '#F0F9FF', backgroundColor: '#FAFCFF' }}>
+                      {dashLogTab === 'daily' && (
+                        <div className="flex items-center gap-2">
+                          <CalendarDays className="w-4 h-4" style={{ color: '#64748B' }} />
+                          <span className="text-xs" style={{ color: '#64748B' }}>日付:</span>
+                          <div style={{ width: '150px' }}>
+                            <DInput type="date" value={dashFilterDate} onChange={(e) => setDashFilterDate(e.target.value)} />
+                          </div>
+                          {dashFilterDate && (
+                            <button onClick={() => setDashFilterDate('')} className="text-xs" style={{ color: '#94A3B8' }}>クリア</button>
+                          )}
+                        </div>
+                      )}
+                      {dashLogTab === 'weekly' && (
+                        <div className="flex items-center gap-2">
+                          <Calendar className="w-4 h-4" style={{ color: '#64748B' }} />
+                          <span className="text-xs" style={{ color: '#64748B' }}>週の開始日:</span>
+                          <div style={{ width: '150px' }}>
+                            <DInput type="date" value={dashFilterWeekStart} onChange={(e) => setDashFilterWeekStart(e.target.value)} />
+                          </div>
+                          {dashFilterWeekStart && (
+                            <button onClick={() => setDashFilterWeekStart('')} className="text-xs" style={{ color: '#94A3B8' }}>クリア</button>
+                          )}
+                        </div>
+                      )}
+                      {dashLogTab === 'monthly' && (
+                        <div className="flex items-center gap-2">
+                          <CalendarRange className="w-4 h-4" style={{ color: '#64748B' }} />
+                          <span className="text-xs" style={{ color: '#64748B' }}>年月:</span>
+                          <div style={{ width: '130px' }}>
+                            <DInput type="month" value={dashFilterMonth} onChange={(e) => setDashFilterMonth(e.target.value)} />
+                          </div>
+                          {dashFilterMonth && (
+                            <button onClick={() => setDashFilterMonth('')} className="text-xs" style={{ color: '#94A3B8' }}>クリア</button>
+                          )}
+                        </div>
+                      )}
+                      <div className="ml-auto">
+                        <button
+                          onClick={() => handleBulkDownloadPdf(dashLogTab, filtered, bulkDateLabel)}
+                          disabled={filtered.length === 0}
+                          className="flex items-center text-xs font-semibold px-3 py-1.5 rounded-lg transition-all"
+                          style={{ backgroundColor: filtered.length === 0 ? '#F0F9FF' : '#0EA5E9', color: filtered.length === 0 ? '#94A3B8' : '#FFFFFF', cursor: filtered.length === 0 ? 'not-allowed' : 'pointer' }}>
+                          <FileText className="w-3.5 h-3.5 mr-1.5" />まとめてPDFダウンロード ({filtered.length}件)
+                        </button>
                       </div>
                     </div>
 
