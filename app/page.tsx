@@ -123,62 +123,91 @@ export default function App() {
   const [dashFilterWeekStart, setDashFilterWeekStart] = useState('');
   const [dashFilterMonth, setDashFilterMonth] = useState('');
 
-  // Supabase から読み込み（saved_reports + daily_logs を統合）
+  // Supabase から読み込み（saved_reports + daily_logs を日報/週報/月報に統合）
   useEffect(() => {
     const loadAll = async () => {
-      // saved_reports
-      const { data: srData } = await supabase
+      const { data: srData, error: srError } = await supabase
         .from('saved_reports')
         .select('*')
         .order('created_at', { ascending: false });
+      if (srError) console.error('saved_reports load error:', srError);
 
       const saved: SavedReport[] = (srData ?? []).map(r => ({
         id: r.id, type: r.type, date: r.date, report: r.report, savedAt: r.created_at,
       }));
 
-      // daily_logs（clients をジョイン）
-      const { data: dlData } = await supabase
+      const { data: dlData, error: dlError } = await supabase
         .from('daily_logs')
         .select('id, duration_hours, raw_input, formatted_report, created_at, clients(name)')
         .order('created_at', { ascending: false });
+      if (dlError) console.error('daily_logs load error:', dlError);
 
-      // (date × client_name) でグループ化
-      const dlMap: Record<string, { date: string; clientName: string; rows: typeof dlData }> = {};
-      for (const log of dlData ?? []) {
-        const date = (log.created_at as string).split('T')[0];
-        const clientName = (log.clients as any)?.name ?? '不明';
-        const key = `${date}__${clientName}`;
-        if (!dlMap[key]) dlMap[key] = { date, clientName, rows: [] };
-        dlMap[key].rows!.push(log);
+      interface DlRow {
+        id: string;
+        duration_hours: number | null;
+        raw_input: string | null;
+        formatted_report: string | null;
+        created_at: string;
+        clients: { name: string } | null;
+      }
+      const logs = (dlData ?? []) as unknown as DlRow[];
+
+      // 週の月曜日を返す
+      const getWeekStart = (dateStr: string): string => {
+        const d = new Date(dateStr + 'T00:00:00');
+        const day = d.getDay();
+        d.setDate(d.getDate() + (day === 0 ? -6 : 1 - day));
+        return d.toISOString().split('T')[0];
+      };
+
+      interface LogGroup { date: string; clientName: string; rows: DlRow[]; }
+      const dailyMap: Record<string, LogGroup> = {};
+      const weeklyMap: Record<string, LogGroup> = {};
+      const monthlyMap: Record<string, LogGroup> = {};
+
+      const addTo = (map: Record<string, LogGroup>, key: string, groupDate: string, clientName: string, log: DlRow) => {
+        if (!map[key]) map[key] = { date: groupDate, clientName, rows: [] };
+        map[key].rows.push(log);
+      };
+
+      for (const log of logs) {
+        const date = log.created_at.split('T')[0];
+        const clientName = log.clients?.name ?? '不明';
+        addTo(dailyMap,   `${date}__${clientName}`,                date,               clientName, log);
+        addTo(weeklyMap,  `${getWeekStart(date)}__${clientName}`,  getWeekStart(date), clientName, log);
+        addTo(monthlyMap, `${date.slice(0, 7)}__${clientName}`,    date.slice(0, 7),   clientName, log);
       }
 
-      // saved_reports に既にある (date × client) はスキップ（重複防止）
-      const savedKeys = new Set(
-        saved.filter(r => r.type === 'daily').map(r => `${r.date}__${r.report.client}`)
-      );
+      const savedKeysFor = (type: SavedReport['type']) =>
+        new Set(saved.filter(r => r.type === type).map(r => `${r.date}__${r.report.client}`));
+      const skDaily   = savedKeysFor('daily');
+      const skWeekly  = savedKeysFor('weekly');
+      const skMonthly = savedKeysFor('monthly');
 
-      const fromDailyLogs: SavedReport[] = Object.values(dlMap)
-        .filter(g => !savedKeys.has(`${g.date}__${g.clientName}`))
-        .map(g => ({
-          id: `dl__${g.date}__${g.clientName}`,
-          type: 'daily' as const,
-          date: g.date,
-          report: {
-            client: g.clientName,
-            total_hours: Math.round((g.rows!.reduce((s, l) => s + (Number(l.duration_hours) || 0), 0)) * 10) / 10,
-            projects: g.rows!.map(l => ({
-              name: '作業記録',
-              hours: Number(l.duration_hours) || 0,
-              progress: 0,
-              memo: (l.raw_input as string) ?? '',
-              links: [],
-              formatted_report: (l.formatted_report as string) ?? (l.raw_input as string) ?? '',
-            })),
-          },
-          savedAt: (g.rows![0]?.created_at as string) ?? new Date().toISOString(),
-        }));
+      const toSR = (g: LogGroup, type: SavedReport['type']): SavedReport => ({
+        id: `dl__${type}__${g.date}__${g.clientName}`,
+        type,
+        date: g.date,
+        report: {
+          client: g.clientName,
+          total_hours: Math.round(g.rows.reduce((s, l) => s + (Number(l.duration_hours) || 0), 0) * 10) / 10,
+          projects: g.rows.map(l => ({
+            name: '作業記録',
+            hours: Number(l.duration_hours) || 0,
+            progress: 0,
+            memo: l.raw_input ?? '',
+            links: [],
+            formatted_report: l.formatted_report ?? l.raw_input ?? '',
+          })),
+        },
+        savedAt: g.rows[0]?.created_at ?? new Date().toISOString(),
+      });
 
-      const merged = [...saved, ...fromDailyLogs].sort((a, b) =>
+      const fromDaily   = Object.values(dailyMap)  .filter(g => !skDaily  .has(`${g.date}__${g.clientName}`)).map(g => toSR(g, 'daily'));
+      const fromWeekly  = Object.values(weeklyMap) .filter(g => !skWeekly .has(`${g.date}__${g.clientName}`)).map(g => toSR(g, 'weekly'));
+      const fromMonthly = Object.values(monthlyMap).filter(g => !skMonthly.has(`${g.date}__${g.clientName}`)).map(g => toSR(g, 'monthly'));
+
+      const merged = [...saved, ...fromDaily, ...fromWeekly, ...fromMonthly].sort((a, b) =>
         b.date.localeCompare(a.date) || b.savedAt.localeCompare(a.savedAt)
       );
       setSavedReports(merged);
@@ -967,7 +996,8 @@ export default function App() {
         <div>
           {items.map((sr, idx) => {
             const dispName = displayClient(sr.report.client);
-            const isEditing = editingReportId === sr.id;
+            const isDailyLog = sr.id.startsWith('dl__');
+            const isEditing = !isDailyLog && editingReportId === sr.id;
             return (
               <div key={sr.id} style={{ borderBottom: idx < items.length - 1 ? '1px solid #F0F9FF' : 'none' }}>
                 <div className="p-5 transition-colors hover:bg-[#FFFDF7]">
@@ -980,12 +1010,19 @@ export default function App() {
                       <span className="text-xs font-semibold px-2.5 py-1 rounded-md" style={{ backgroundColor: '#F0F9FF', color: '#0EA5E9' }}>
                         <Clock className="w-3 h-3 inline mr-1" />{sr.report.total_hours}h
                       </span>
-                      <button onClick={() => setEditingReportId(isEditing ? null : sr.id)} className="p-1.5 rounded-md transition-colors" style={{ color: '#64748B' }} title="編集">
-                        <Pencil className="w-3.5 h-3.5" />
-                      </button>
-                      <button onClick={() => deleteReport(sr.id)} className="p-1.5 rounded-md transition-colors hover:text-red-500" style={{ color: '#94A3B8' }} title="削除">
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
+                      {!isDailyLog && (
+                        <button onClick={() => setEditingReportId(isEditing ? null : sr.id)} className="p-1.5 rounded-md transition-colors" style={{ color: '#64748B' }} title="編集">
+                          <Pencil className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                      {!isDailyLog && (
+                        <button onClick={() => deleteReport(sr.id)} className="p-1.5 rounded-md transition-colors hover:text-red-500" style={{ color: '#94A3B8' }} title="削除">
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                      {isDailyLog && (
+                        <span className="text-[10px] px-1.5 py-0.5 rounded" style={{ backgroundColor: '#F0F9FF', color: '#94A3B8' }}>ログ</span>
+                      )}
                     </div>
                   </div>
                   {sr.report.projects.map((p, pi) => (
