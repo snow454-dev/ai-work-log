@@ -138,19 +138,29 @@ export default function App() {
 
       const { data: dlData, error: dlError } = await supabase
         .from('daily_logs')
-        .select('id, duration_hours, raw_input, formatted_report, created_at, clients(name)')
-        .order('created_at', { ascending: false });
+        .select('id, date, client_id, duration_hours, raw_input, formatted_report, created_at, clients(name)')
+        .order('date', { ascending: false });
       if (dlError) console.error('daily_logs load error:', dlError);
+      console.log('daily_logs raw:', dlData?.length, 'rows', dlData?.[0]);
 
       interface DlRow {
         id: string;
+        date: string | null;
+        client_id: string | null;
         duration_hours: number | null;
         raw_input: string | null;
         formatted_report: string | null;
         created_at: string;
-        clients: { name: string } | null;
+        clients: { name: string } | { name: string }[] | null;
       }
       const logs = (dlData ?? []) as unknown as DlRow[];
+
+      // clients が配列で返る場合と object で返る場合を両対応
+      const getClientName = (log: DlRow): string => {
+        if (!log.clients) return '不明';
+        if (Array.isArray(log.clients)) return log.clients[0]?.name ?? '不明';
+        return log.clients.name ?? '不明';
+      };
 
       // 週の月曜日を返す
       const getWeekStart = (dateStr: string): string => {
@@ -171,8 +181,9 @@ export default function App() {
       };
 
       for (const log of logs) {
-        const date = log.created_at.split('T')[0];
-        const clientName = log.clients?.name ?? '不明';
+        // date カラムを優先、なければ created_at から抽出
+        const date = (log.date ?? log.created_at).split('T')[0];
+        const clientName = getClientName(log);
         addTo(dailyMap,   `${date}__${clientName}`,                date,               clientName, log);
         addTo(weeklyMap,  `${getWeekStart(date)}__${clientName}`,  getWeekStart(date), clientName, log);
         addTo(monthlyMap, `${date.slice(0, 7)}__${clientName}`,    date.slice(0, 7),   clientName, log);
@@ -207,9 +218,14 @@ export default function App() {
       const fromWeekly  = Object.values(weeklyMap) .filter(g => !skWeekly .has(`${g.date}__${g.clientName}`)).map(g => toSR(g, 'weekly'));
       const fromMonthly = Object.values(monthlyMap).filter(g => !skMonthly.has(`${g.date}__${g.clientName}`)).map(g => toSR(g, 'monthly'));
 
+      console.log('fromDaily:', fromDaily.length, fromDaily.map(r => r.date));
+      console.log('fromWeekly:', fromWeekly.length, fromWeekly.map(r => r.date));
+      console.log('fromMonthly:', fromMonthly.length, fromMonthly.map(r => r.date));
+
       const merged = [...saved, ...fromDaily, ...fromWeekly, ...fromMonthly].sort((a, b) =>
         b.date.localeCompare(a.date) || b.savedAt.localeCompare(a.savedAt)
       );
+      console.log('merged total:', merged.length, 'types:', merged.map(r => `${r.type}:${r.date}`));
       setSavedReports(merged);
     };
 
@@ -1317,10 +1333,11 @@ export default function App() {
                 ];
                 const [dashLogTab, setDashLogTab] = [dashboardLogTab, setDashboardLogTab];
                 const allOfType = savedReports.filter(r => r.type === dashLogTab);
+                console.log(`[filter] tab=${dashLogTab} allOfType=${allOfType.length} filterMonth=${dashFilterMonth}`);
                 const filtered = allOfType.filter(sr => {
                   if (dashLogTab === 'daily' && dashFilterDate) return sr.date === dashFilterDate;
                   if (dashLogTab === 'weekly' && dashFilterWeekStart) return sr.date === dashFilterWeekStart;
-                  if (dashLogTab === 'monthly' && dashFilterMonth) return sr.date.startsWith(dashFilterMonth);
+                  if (dashLogTab === 'monthly' && dashFilterMonth) return sr.date === dashFilterMonth || sr.date.startsWith(dashFilterMonth);
                   return true;
                 });
                 const bulkDateLabel = dashLogTab === 'daily'
