@@ -23,6 +23,12 @@ interface AggregatedReport {
   total_duration_hours: number;
   client_summaries: { client_name: string; duration_hours: number; activities: string[]; links: string[]; summary: string; }[];
 }
+interface DlLogRow { id: string; date: string; duration_hours: number; formatted_report: string; }
+interface DlRow {
+  id: string; date: string | null; client_id: string | null; duration_hours: number | null;
+  raw_input: string | null; formatted_report: string | null; created_at: string;
+  clients: { name: string } | { name: string }[] | null;
+}
 
 /* ═══════════════════ Helpers ═══════════════════ */
 
@@ -122,6 +128,9 @@ export default function App() {
   const [dashFilterDate, setDashFilterDate] = useState('');
   const [dashFilterWeekStart, setDashFilterWeekStart] = useState('');
   const [dashFilterMonth, setDashFilterMonth] = useState('');
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [dlRowsMap, setDlRowsMap] = useState<Record<string, DlLogRow[]>>({});
+  const [editDlValues, setEditDlValues] = useState<Record<string, { formatted_report: string; duration_hours: string }>>({});
 
   // Supabase から読み込み（saved_reports + daily_logs を日報/週報/月報に統合）
   useEffect(() => {
@@ -143,16 +152,6 @@ export default function App() {
       if (dlError) console.error('daily_logs load error:', dlError);
       console.log('daily_logs raw:', dlData?.length, 'rows', dlData?.[0]);
 
-      interface DlRow {
-        id: string;
-        date: string | null;
-        client_id: string | null;
-        duration_hours: number | null;
-        raw_input: string | null;
-        formatted_report: string | null;
-        created_at: string;
-        clients: { name: string } | { name: string }[] | null;
-      }
       const logs = (dlData ?? []) as unknown as DlRow[];
 
       // clients が配列で返る場合と object で返る場合を両対応
@@ -218,14 +217,22 @@ export default function App() {
       const fromWeekly  = Object.values(weeklyMap) .filter(g => !skWeekly .has(`${g.date}__${g.clientName}`)).map(g => toSR(g, 'weekly'));
       const fromMonthly = Object.values(monthlyMap).filter(g => !skMonthly.has(`${g.date}__${g.clientName}`)).map(g => toSR(g, 'monthly'));
 
-      console.log('fromDaily:', fromDaily.length, fromDaily.map(r => r.date));
-      console.log('fromWeekly:', fromWeekly.length, fromWeekly.map(r => r.date));
-      console.log('fromMonthly:', fromMonthly.length, fromMonthly.map(r => r.date));
+      // dlRowsMap: 合成レポートID → 元の daily_log 行の配列
+      const toLogRows = (g: LogGroup): DlLogRow[] => g.rows.map(r => ({
+        id: r.id,
+        date: (r.date ?? r.created_at).split('T')[0],
+        duration_hours: Number(r.duration_hours) || 0,
+        formatted_report: r.formatted_report ?? r.raw_input ?? '',
+      }));
+      const newDlRowsMap: Record<string, DlLogRow[]> = {};
+      for (const g of Object.values(dailyMap))   newDlRowsMap[`dl__daily__${g.date}__${g.clientName}`]   = toLogRows(g);
+      for (const g of Object.values(weeklyMap))  newDlRowsMap[`dl__weekly__${g.date}__${g.clientName}`]  = toLogRows(g);
+      for (const g of Object.values(monthlyMap)) newDlRowsMap[`dl__monthly__${g.date}__${g.clientName}`] = toLogRows(g);
+      setDlRowsMap(newDlRowsMap);
 
       const merged = [...saved, ...fromDaily, ...fromWeekly, ...fromMonthly].sort((a, b) =>
         b.date.localeCompare(a.date) || b.savedAt.localeCompare(a.savedAt)
       );
-      console.log('merged total:', merged.length, 'types:', merged.map(r => `${r.type}:${r.date}`));
       setSavedReports(merged);
     };
 
@@ -255,6 +262,63 @@ export default function App() {
       setSavedReports(prev => prev.map(r => r.id === id ? { ...r, report: updated } : r));
       setEditingReportId(null);
     }
+  };
+
+  const updateDailyLog = async (logId: string, formatted_report: string, duration_hours: number): Promise<boolean> => {
+    const { error } = await supabase.from('daily_logs').update({ formatted_report, duration_hours }).eq('id', logId);
+    if (error) { console.error('daily_log update error:', error); return false; }
+    setDlRowsMap(prev => {
+      const next = { ...prev };
+      for (const key of Object.keys(next)) {
+        next[key] = next[key].map(r => r.id === logId ? { ...r, formatted_report, duration_hours } : r);
+      }
+      return next;
+    });
+    return true;
+  };
+
+  // dl__ エントリのログ行編集UI（renderSavedList・dashboard 共通）
+  const renderDlLogRows = (srId: string) => {
+    const rows = dlRowsMap[srId] ?? [];
+    if (rows.length === 0) return <p className="text-xs px-1" style={{ color: '#94A3B8' }}>ログデータがありません</p>;
+    return (
+      <div className="space-y-2">
+        {rows.map(row => {
+          const ev = editDlValues[row.id];
+          return (
+            <div key={row.id} className="rounded-lg border p-3 space-y-2" style={{ borderColor: '#E0F2FE', backgroundColor: '#F8FDFF' }}>
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-xs px-2 py-0.5 rounded font-semibold" style={{ backgroundColor: '#F0F9FF', color: '#64748B' }}>{row.date}</span>
+                <div className="flex items-center gap-1.5">
+                  <div style={{ width: '80px' }}>
+                    <DInput type="number" step="0.5" min="0"
+                      value={ev?.duration_hours ?? String(row.duration_hours)}
+                      onChange={e => setEditDlValues(prev => ({ ...prev, [row.id]: { formatted_report: prev[row.id]?.formatted_report ?? row.formatted_report, duration_hours: e.target.value } }))}
+                    />
+                  </div>
+                  <span className="text-xs" style={{ color: '#64748B' }}>h</span>
+                </div>
+              </div>
+              <DTextarea rows={2}
+                value={ev?.formatted_report ?? row.formatted_report}
+                onChange={e => setEditDlValues(prev => ({ ...prev, [row.id]: { duration_hours: prev[row.id]?.duration_hours ?? String(row.duration_hours), formatted_report: e.target.value } }))}
+                placeholder="報告内容"
+              />
+              {ev && (
+                <div className="flex justify-end">
+                  <button onClick={async () => {
+                    const ok = await updateDailyLog(row.id, ev.formatted_report, Number(ev.duration_hours) || row.duration_hours);
+                    if (ok) setEditDlValues(prev => { const n = { ...prev }; delete n[row.id]; return n; });
+                  }} className="flex items-center text-xs font-semibold px-3 py-1.5 rounded-lg" style={{ backgroundColor: '#0EA5E9', color: '#FFFFFF' }}>
+                    <Save className="w-3 h-3 mr-1" />保存
+                  </button>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    );
   };
 
   /* ── Shared state ── */
@@ -1001,26 +1065,58 @@ export default function App() {
     const items = savedReports.filter(r => r.type === type);
     const typeLabel = type === 'daily' ? '日報' : type === 'weekly' ? '週報' : '月報';
     if (items.length === 0) return null;
+
+    const allIds = items.map(r => r.id);
+    const allChecked = allIds.length > 0 && allIds.every(id => selectedIds.has(id));
+    const selectedItems = items.filter(r => selectedIds.has(r.id));
+    const toggleAll = () => setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (allChecked) { allIds.forEach(id => next.delete(id)); } else { allIds.forEach(id => next.add(id)); }
+      return next;
+    });
+    const dateLabel = type === 'monthly'
+      ? (dashFilterMonth || `${new Date().getFullYear()}-${String(new Date().getMonth()+1).padStart(2,'0')}`)
+      : new Date().toISOString().split('T')[0];
+
     return (
       <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#FFFFFF', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
-        <div className="p-5 border-b flex items-center justify-between" style={{ borderColor: '#F0F9FF', backgroundColor: '#F8FDFF' }}>
-          <h2 className="text-sm font-semibold text-[#0F172A] flex items-center">
-            <History className="w-4 h-4 mr-2" style={{ color: '#0EA5E9' }} />過去の{typeLabel}
-          </h2>
-          <span className="text-xs font-semibold px-3 py-1 rounded-md border" style={{ borderColor: '#E0F2FE', color: '#64748B' }}>{items.length} 件</span>
+        <div className="p-4 border-b flex items-center justify-between flex-wrap gap-3" style={{ borderColor: '#F0F9FF', backgroundColor: '#F8FDFF' }}>
+          <div className="flex items-center gap-3">
+            <input type="checkbox" checked={allChecked} onChange={toggleAll} className="w-4 h-4 cursor-pointer" style={{ accentColor: '#0EA5E9' }} />
+            <h2 className="text-sm font-semibold text-[#0F172A] flex items-center">
+              <History className="w-4 h-4 mr-2" style={{ color: '#0EA5E9' }} />過去の{typeLabel}
+            </h2>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-semibold px-3 py-1 rounded-md border" style={{ borderColor: '#E0F2FE', color: '#64748B' }}>{items.length} 件</span>
+            {selectedItems.length > 0 && (
+              <button onClick={() => handleBulkDownloadPdf(type, selectedItems, dateLabel)}
+                className="flex items-center text-xs font-semibold px-3 py-1.5 rounded-lg"
+                style={{ backgroundColor: '#0EA5E9', color: '#FFFFFF' }}>
+                <FileText className="w-3.5 h-3.5 mr-1.5" />選択をPDF ({selectedItems.length}件)
+              </button>
+            )}
+          </div>
         </div>
         <div>
           {items.map((sr, idx) => {
             const dispName = displayClient(sr.report.client);
             const isDailyLog = sr.id.startsWith('dl__');
             const isEditing = !isDailyLog && editingReportId === sr.id;
+            const isExpanded = expandedReportId === sr.id;
+            const isChecked = selectedIds.has(sr.id);
             return (
               <div key={sr.id} style={{ borderBottom: idx < items.length - 1 ? '1px solid #F0F9FF' : 'none' }}>
-                <div className="p-5 transition-colors hover:bg-[#FFFDF7]">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-3 gap-2">
+                <div className="p-4 transition-colors hover:bg-[#FFFDF7]">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-2 gap-2">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="px-2.5 py-1 rounded-md text-xs font-semibold" style={{ backgroundColor: '#F0F9FF', color: '#64748B' }}>{sr.date}</span>
-                      <span className="font-semibold text-sm text-[#0F172A]">{dispName}</span>
+                      <input type="checkbox" checked={isChecked}
+                        onChange={e => setSelectedIds(prev => { const n = new Set(prev); e.target.checked ? n.add(sr.id) : n.delete(sr.id); return n; })}
+                        className="w-4 h-4 cursor-pointer shrink-0" style={{ accentColor: '#0EA5E9' }} />
+                      <div className="flex items-center gap-2 flex-wrap cursor-pointer" onClick={() => setExpandedReportId(isExpanded ? null : sr.id)}>
+                        <span className="px-2.5 py-1 rounded-md text-xs font-semibold" style={{ backgroundColor: '#F0F9FF', color: '#64748B' }}>{sr.date}</span>
+                        <span className="font-semibold text-sm text-[#0F172A]">{dispName}</span>
+                      </div>
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="text-xs font-semibold px-2.5 py-1 rounded-md" style={{ backgroundColor: '#F0F9FF', color: '#0EA5E9' }}>
@@ -1036,38 +1132,48 @@ export default function App() {
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
                       )}
-                      {isDailyLog && (
-                        <span className="text-[10px] px-1.5 py-0.5 rounded" style={{ backgroundColor: '#F0F9FF', color: '#94A3B8' }}>ログ</span>
-                      )}
+                      {isDailyLog && <span className="text-[10px] px-1.5 py-0.5 rounded" style={{ backgroundColor: '#F0F9FF', color: '#94A3B8' }}>ログ</span>}
                     </div>
                   </div>
-                  {sr.report.projects.map((p, pi) => (
-                    <div key={pi} className="mb-2">
-                      {isEditing ? (
-                        <div className="space-y-2 rounded-lg border p-3 mb-2" style={{ borderColor: '#E0F2FE' }}>
-                          <div className="grid grid-cols-[1fr_80px_80px] gap-2">
-                            <DInput value={p.name} onChange={(e) => { const updated = { ...sr.report, projects: sr.report.projects.map((pp, ppi) => ppi === pi ? { ...pp, name: e.target.value } : pp) }; setSavedReports(prev => prev.map(r => r.id === sr.id ? { ...r, report: updated } : r)); }} placeholder="プロジェクト名" />
-                            <DInput type="number" value={String(p.hours)} onChange={(e) => { const updated = { ...sr.report, projects: sr.report.projects.map((pp, ppi) => ppi === pi ? { ...pp, hours: Number(e.target.value) } : pp), total_hours: sr.report.projects.reduce((s, pp, ppi) => s + (ppi === pi ? Number(e.target.value) : pp.hours), 0) }; setSavedReports(prev => prev.map(r => r.id === sr.id ? { ...r, report: updated } : r)); }} placeholder="h" />
-                            <DInput type="number" value={String(p.progress)} onChange={(e) => { const updated = { ...sr.report, projects: sr.report.projects.map((pp, ppi) => ppi === pi ? { ...pp, progress: Number(e.target.value) } : pp) }; setSavedReports(prev => prev.map(r => r.id === sr.id ? { ...r, report: updated } : r)); }} placeholder="%" />
-                          </div>
-                          <DTextarea value={p.formatted_report} onChange={(e) => { const updated = { ...sr.report, projects: sr.report.projects.map((pp, ppi) => ppi === pi ? { ...pp, formatted_report: e.target.value } : pp) }; setSavedReports(prev => prev.map(r => r.id === sr.id ? { ...r, report: updated } : r)); }} rows={2} />
+                  <AnimatePresence>
+                    {(isExpanded || isEditing) && (
+                      <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
+                        <div className="mt-2 space-y-2">
+                          {isDailyLog ? renderDlLogRows(sr.id) : (
+                            <>
+                              {sr.report.projects.map((p, pi) => (
+                                <div key={pi} className="mb-2">
+                                  {isEditing ? (
+                                    <div className="space-y-2 rounded-lg border p-3" style={{ borderColor: '#E0F2FE' }}>
+                                      <div className="grid grid-cols-[1fr_80px_80px] gap-2">
+                                        <DInput value={p.name} onChange={e => { const u = { ...sr.report, projects: sr.report.projects.map((pp, ppi) => ppi === pi ? { ...pp, name: e.target.value } : pp) }; setSavedReports(prev => prev.map(r => r.id === sr.id ? { ...r, report: u } : r)); }} placeholder="プロジェクト名" />
+                                        <DInput type="number" value={String(p.hours)} onChange={e => { const hrs = Number(e.target.value); const u = { ...sr.report, projects: sr.report.projects.map((pp, ppi) => ppi === pi ? { ...pp, hours: hrs } : pp), total_hours: sr.report.projects.reduce((s, pp, ppi) => s + (ppi === pi ? hrs : pp.hours), 0) }; setSavedReports(prev => prev.map(r => r.id === sr.id ? { ...r, report: u } : r)); }} placeholder="h" />
+                                        <DInput type="number" value={String(p.progress)} onChange={e => { const u = { ...sr.report, projects: sr.report.projects.map((pp, ppi) => ppi === pi ? { ...pp, progress: Number(e.target.value) } : pp) }; setSavedReports(prev => prev.map(r => r.id === sr.id ? { ...r, report: u } : r)); }} placeholder="%" />
+                                      </div>
+                                      <DTextarea value={p.formatted_report} onChange={e => { const u = { ...sr.report, projects: sr.report.projects.map((pp, ppi) => ppi === pi ? { ...pp, formatted_report: e.target.value } : pp) }; setSavedReports(prev => prev.map(r => r.id === sr.id ? { ...r, report: u } : r)); }} rows={2} />
+                                    </div>
+                                  ) : (
+                                    <div className="flex items-start gap-3">
+                                      <span className="text-sm font-semibold text-[#334155] shrink-0">{p.name}</span>
+                                      <p className="text-sm text-[#475569] leading-relaxed line-clamp-2">{p.formatted_report}</p>
+                                    </div>
+                                  )}
+                                </div>
+                              ))}
+                              {isEditing && (
+                                <div className="flex justify-end mt-1">
+                                  <button onClick={() => { const sr2 = savedReports.find(r => r.id === sr.id); if (sr2) updateSavedReport(sr.id, sr2.report); }}
+                                    className="flex items-center text-xs font-semibold px-4 py-2 rounded-lg" style={{ backgroundColor: '#0EA5E9', color: '#FFFFFF' }}>
+                                    <Save className="w-3.5 h-3.5 mr-1.5" />保存
+                                  </button>
+                                </div>
+                              )}
+                            </>
+                          )}
                         </div>
-                      ) : (
-                        <div className="flex items-start gap-3">
-                          <span className="text-sm font-semibold text-[#334155] shrink-0">{p.name}</span>
-                          <p className="text-sm text-[#475569] leading-relaxed line-clamp-2">{p.formatted_report}</p>
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                  {isEditing && (
-                    <div className="flex justify-end mt-2">
-                      <button onClick={() => { const sr2 = savedReports.find(r => r.id === sr.id); if (sr2) updateSavedReport(sr.id, sr2.report); }}
-                        className="flex items-center text-xs font-semibold px-4 py-2 rounded-lg" style={{ backgroundColor: '#0EA5E9', color: '#FFFFFF' }}>
-                        <Save className="w-3.5 h-3.5 mr-1.5" />保存
-                      </button>
-                    </div>
-                  )}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
               </div>
             );
@@ -1333,7 +1439,6 @@ export default function App() {
                 ];
                 const [dashLogTab, setDashLogTab] = [dashboardLogTab, setDashboardLogTab];
                 const allOfType = savedReports.filter(r => r.type === dashLogTab);
-                console.log(`[filter] tab=${dashLogTab} allOfType=${allOfType.length} filterMonth=${dashFilterMonth}`);
                 const filtered = allOfType.filter(sr => {
                   if (dashLogTab === 'daily' && dashFilterDate) return sr.date === dashFilterDate;
                   if (dashLogTab === 'weekly' && dashFilterWeekStart) return sr.date === dashFilterWeekStart;
@@ -1345,6 +1450,14 @@ export default function App() {
                   : dashLogTab === 'weekly'
                   ? (dashFilterWeekStart || new Date().toISOString().split('T')[0])
                   : (dashFilterMonth || `${new Date().getFullYear()}-${String(new Date().getMonth()+1).padStart(2,'0')}`);
+                const filteredIds = filtered.map(r => r.id);
+                const allFilteredChecked = filteredIds.length > 0 && filteredIds.every(id => selectedIds.has(id));
+                const selectedFiltered = filtered.filter(r => selectedIds.has(r.id));
+                const toggleAllFiltered = () => setSelectedIds(prev => {
+                  const next = new Set(prev);
+                  if (allFilteredChecked) { filteredIds.forEach(id => next.delete(id)); } else { filteredIds.forEach(id => next.add(id)); }
+                  return next;
+                });
 
                 return (
                   <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#FFFFFF', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
@@ -1406,13 +1519,43 @@ export default function App() {
                           )}
                         </div>
                       )}
-                      <div className="ml-auto">
+                      <div className="flex items-center gap-2">
+                        <input type="checkbox" checked={allFilteredChecked} onChange={toggleAllFiltered}
+                          className="w-4 h-4 cursor-pointer" style={{ accentColor: '#0EA5E9' }} />
+                        <span className="text-xs" style={{ color: '#64748B' }}>全選択</span>
+                        {selectedFiltered.length > 0 && (
+                          <span className="text-xs font-semibold px-2 py-0.5 rounded" style={{ backgroundColor: '#F0F9FF', color: '#0EA5E9' }}>{selectedFiltered.length}件選択中</span>
+                        )}
+                      </div>
+                      <div className="ml-auto flex items-center gap-2 flex-wrap">
+                        {selectedFiltered.length > 0 && (
+                          <button onClick={() => {
+                            for (const sr of selectedFiltered) {
+                              const email = emailInputs[sr.report.client] || emailHistory[sr.report.client] || '';
+                              if (email) handleSendEmail(sr.report);
+                            }
+                            if (selectedFiltered.every(sr => !(emailInputs[sr.report.client] || emailHistory[sr.report.client]))) {
+                              alert('選択した顧客にメールアドレスが登録されていません。');
+                            }
+                          }}
+                            className="flex items-center text-xs font-semibold px-3 py-1.5 rounded-lg transition-all"
+                            style={{ backgroundColor: '#FFFFFF', color: '#0EA5E9', border: '1px solid #0EA5E9' }}>
+                            <Mail className="w-3.5 h-3.5 mr-1.5" />選択にメール ({selectedFiltered.length}件)
+                          </button>
+                        )}
+                        {selectedFiltered.length > 0 && (
+                          <button onClick={() => handleBulkDownloadPdf(dashLogTab, selectedFiltered, bulkDateLabel)}
+                            className="flex items-center text-xs font-semibold px-3 py-1.5 rounded-lg"
+                            style={{ backgroundColor: '#0EA5E9', color: '#FFFFFF' }}>
+                            <FileText className="w-3.5 h-3.5 mr-1.5" />選択をPDF ({selectedFiltered.length}件)
+                          </button>
+                        )}
                         <button
                           onClick={() => handleBulkDownloadPdf(dashLogTab, filtered, bulkDateLabel)}
                           disabled={filtered.length === 0}
                           className="flex items-center text-xs font-semibold px-3 py-1.5 rounded-lg transition-all"
-                          style={{ backgroundColor: filtered.length === 0 ? '#F0F9FF' : '#0EA5E9', color: filtered.length === 0 ? '#94A3B8' : '#FFFFFF', cursor: filtered.length === 0 ? 'not-allowed' : 'pointer' }}>
-                          <FileText className="w-3.5 h-3.5 mr-1.5" />まとめてPDFダウンロード ({filtered.length}件)
+                          style={{ backgroundColor: filtered.length === 0 ? '#F0F9FF' : '#FFFFFF', color: filtered.length === 0 ? '#94A3B8' : '#0EA5E9', border: '1px solid', borderColor: filtered.length === 0 ? '#E0F2FE' : '#0EA5E9', cursor: filtered.length === 0 ? 'not-allowed' : 'pointer' }}>
+                          <FileText className="w-3.5 h-3.5 mr-1.5" />まとめてPDF ({filtered.length}件)
                         </button>
                       </div>
                     </div>
@@ -1435,12 +1578,17 @@ export default function App() {
                               <div className="p-5">
                                 {/* Header row */}
                                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-1">
-                                  <div className="flex items-center gap-2 flex-wrap cursor-pointer" onClick={() => setExpandedReportId(isExpanded ? null : sr.id)}>
-                                    <span className="px-2.5 py-1 rounded-md text-xs font-semibold" style={{ backgroundColor: '#F0F9FF', color: '#64748B' }}>{sr.date}</span>
-                                    <span className="font-semibold text-sm text-[#0F172A]">{dispName}</span>
-                                    <span className="text-xs font-semibold px-2 py-0.5 rounded-md" style={{ backgroundColor: '#F0F9FF', color: '#0EA5E9' }}>
-                                      {sr.report.total_hours}h / {sr.report.projects.length}件
-                                    </span>
+                                  <div className="flex items-center gap-2 flex-wrap">
+                                    <input type="checkbox" checked={selectedIds.has(sr.id)}
+                                      onChange={e => setSelectedIds(prev => { const n = new Set(prev); e.target.checked ? n.add(sr.id) : n.delete(sr.id); return n; })}
+                                      className="w-4 h-4 cursor-pointer shrink-0" style={{ accentColor: '#0EA5E9' }} />
+                                    <div className="flex items-center gap-2 flex-wrap cursor-pointer" onClick={() => setExpandedReportId(isExpanded ? null : sr.id)}>
+                                      <span className="px-2.5 py-1 rounded-md text-xs font-semibold" style={{ backgroundColor: '#F0F9FF', color: '#64748B' }}>{sr.date}</span>
+                                      <span className="font-semibold text-sm text-[#0F172A]">{dispName}</span>
+                                      <span className="text-xs font-semibold px-2 py-0.5 rounded-md" style={{ backgroundColor: '#F0F9FF', color: '#0EA5E9' }}>
+                                        {sr.report.total_hours}h / {sr.report.projects.length}件
+                                      </span>
+                                    </div>
                                   </div>
                                   <div className="flex items-center gap-1.5">
                                     <button onClick={() => setSendingEmailFor(srEmailOpen ? null : `saved_${sr.id}`)}
@@ -1493,51 +1641,55 @@ export default function App() {
                                   {(isExpanded || isEditing) && (
                                     <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
                                       <div className="mt-3 space-y-3">
-                                        {sr.report.projects.map((p, pi) => (
-                                          <div key={pi}>
-                                            {isEditing ? (
-                                              <div className="space-y-2 rounded-lg border p-3" style={{ borderColor: '#E0F2FE' }}>
-                                                <div className="grid grid-cols-[1fr_80px_80px] gap-2">
-                                                  <DInput value={p.name} onChange={(e) => { const updated = { ...sr.report, projects: sr.report.projects.map((pp, ppi) => ppi === pi ? { ...pp, name: e.target.value } : pp) }; setSavedReports(prev => prev.map(r => r.id === sr.id ? { ...r, report: updated } : r)); }} placeholder="プロジェクト名" />
-                                                  <DInput type="number" value={String(p.hours)} onChange={(e) => { const hrs = Number(e.target.value); const updated = { ...sr.report, projects: sr.report.projects.map((pp, ppi) => ppi === pi ? { ...pp, hours: hrs } : pp), total_hours: sr.report.projects.reduce((s, pp, ppi) => s + (ppi === pi ? hrs : pp.hours), 0) }; setSavedReports(prev => prev.map(r => r.id === sr.id ? { ...r, report: updated } : r)); }} placeholder="h" />
-                                                  <DInput type="number" value={String(p.progress)} onChange={(e) => { const updated = { ...sr.report, projects: sr.report.projects.map((pp, ppi) => ppi === pi ? { ...pp, progress: Number(e.target.value) } : pp) }; setSavedReports(prev => prev.map(r => r.id === sr.id ? { ...r, report: updated } : r)); }} placeholder="%" />
-                                                </div>
-                                                <DTextarea value={p.formatted_report} onChange={(e) => { const updated = { ...sr.report, projects: sr.report.projects.map((pp, ppi) => ppi === pi ? { ...pp, formatted_report: e.target.value } : pp) }; setSavedReports(prev => prev.map(r => r.id === sr.id ? { ...r, report: updated } : r)); }} rows={2} />
-                                              </div>
-                                            ) : (
-                                              <div className="rounded-lg border p-4 space-y-2" style={{ borderColor: '#E0F2FE' }}>
-                                                <div className="flex items-center justify-between">
-                                                  <span className="font-semibold text-sm text-[#0F172A]">{p.name}</span>
-                                                  <div className="flex items-center gap-2">
-                                                    <span className="text-xs font-semibold px-2 py-0.5 rounded-md" style={{ backgroundColor: '#F0F9FF', color: '#0EA5E9' }}>{p.hours}h</span>
-                                                    <span className="text-xs font-semibold px-2 py-0.5 rounded-md" style={{ backgroundColor: '#F0F9FF', color: p.progress >= 100 ? '#16A34A' : '#0EA5E9' }}>{p.progress}%</span>
-                                                  </div>
-                                                </div>
-                                                <div className="h-1.5 rounded-full" style={{ backgroundColor: '#E0F2FE' }}>
-                                                  <div className="h-1.5 rounded-full" style={{ width: `${Math.min(p.progress, 100)}%`, backgroundColor: p.progress >= 100 ? '#16A34A' : '#0EA5E9' }} />
-                                                </div>
-                                                <p className="text-sm text-[#475569] leading-relaxed">{p.formatted_report}</p>
-                                                {p.links.length > 0 && (
-                                                  <div className="flex items-start gap-2 pt-1">
-                                                    <Link2 className="w-3 h-3 mt-0.5 shrink-0" style={{ color: '#64748B' }} />
-                                                    <div className="space-y-0.5">
-                                                      {p.links.map((link, li) => (
-                                                        <a key={li} href={link} target="_blank" rel="noopener noreferrer" className="block text-xs truncate" style={{ color: '#0EA5E9' }}>{link}</a>
-                                                      ))}
+                                        {isDailyLog ? renderDlLogRows(sr.id) : (
+                                          <>
+                                            {sr.report.projects.map((p, pi) => (
+                                              <div key={pi}>
+                                                {isEditing ? (
+                                                  <div className="space-y-2 rounded-lg border p-3" style={{ borderColor: '#E0F2FE' }}>
+                                                    <div className="grid grid-cols-[1fr_80px_80px] gap-2">
+                                                      <DInput value={p.name} onChange={(e) => { const updated = { ...sr.report, projects: sr.report.projects.map((pp, ppi) => ppi === pi ? { ...pp, name: e.target.value } : pp) }; setSavedReports(prev => prev.map(r => r.id === sr.id ? { ...r, report: updated } : r)); }} placeholder="プロジェクト名" />
+                                                      <DInput type="number" value={String(p.hours)} onChange={(e) => { const hrs = Number(e.target.value); const updated = { ...sr.report, projects: sr.report.projects.map((pp, ppi) => ppi === pi ? { ...pp, hours: hrs } : pp), total_hours: sr.report.projects.reduce((s, pp, ppi) => s + (ppi === pi ? hrs : pp.hours), 0) }; setSavedReports(prev => prev.map(r => r.id === sr.id ? { ...r, report: updated } : r)); }} placeholder="h" />
+                                                      <DInput type="number" value={String(p.progress)} onChange={(e) => { const updated = { ...sr.report, projects: sr.report.projects.map((pp, ppi) => ppi === pi ? { ...pp, progress: Number(e.target.value) } : pp) }; setSavedReports(prev => prev.map(r => r.id === sr.id ? { ...r, report: updated } : r)); }} placeholder="%" />
                                                     </div>
+                                                    <DTextarea value={p.formatted_report} onChange={(e) => { const updated = { ...sr.report, projects: sr.report.projects.map((pp, ppi) => ppi === pi ? { ...pp, formatted_report: e.target.value } : pp) }; setSavedReports(prev => prev.map(r => r.id === sr.id ? { ...r, report: updated } : r)); }} rows={2} />
+                                                  </div>
+                                                ) : (
+                                                  <div className="rounded-lg border p-4 space-y-2" style={{ borderColor: '#E0F2FE' }}>
+                                                    <div className="flex items-center justify-between">
+                                                      <span className="font-semibold text-sm text-[#0F172A]">{p.name}</span>
+                                                      <div className="flex items-center gap-2">
+                                                        <span className="text-xs font-semibold px-2 py-0.5 rounded-md" style={{ backgroundColor: '#F0F9FF', color: '#0EA5E9' }}>{p.hours}h</span>
+                                                        <span className="text-xs font-semibold px-2 py-0.5 rounded-md" style={{ backgroundColor: '#F0F9FF', color: p.progress >= 100 ? '#16A34A' : '#0EA5E9' }}>{p.progress}%</span>
+                                                      </div>
+                                                    </div>
+                                                    <div className="h-1.5 rounded-full" style={{ backgroundColor: '#E0F2FE' }}>
+                                                      <div className="h-1.5 rounded-full" style={{ width: `${Math.min(p.progress, 100)}%`, backgroundColor: p.progress >= 100 ? '#16A34A' : '#0EA5E9' }} />
+                                                    </div>
+                                                    <p className="text-sm text-[#475569] leading-relaxed">{p.formatted_report}</p>
+                                                    {p.links.length > 0 && (
+                                                      <div className="flex items-start gap-2 pt-1">
+                                                        <Link2 className="w-3 h-3 mt-0.5 shrink-0" style={{ color: '#64748B' }} />
+                                                        <div className="space-y-0.5">
+                                                          {p.links.map((link, li) => (
+                                                            <a key={li} href={link} target="_blank" rel="noopener noreferrer" className="block text-xs truncate" style={{ color: '#0EA5E9' }}>{link}</a>
+                                                          ))}
+                                                        </div>
+                                                      </div>
+                                                    )}
                                                   </div>
                                                 )}
                                               </div>
+                                            ))}
+                                            {isEditing && (
+                                              <div className="flex justify-end">
+                                                <button onClick={() => { const sr2 = savedReports.find(r => r.id === sr.id); if (sr2) updateSavedReport(sr.id, sr2.report); }}
+                                                  className="flex items-center text-xs font-semibold px-4 py-2 rounded-lg" style={{ backgroundColor: '#0EA5E9', color: '#FFFFFF' }}>
+                                                  <Save className="w-3.5 h-3.5 mr-1.5" />保存
+                                                </button>
+                                              </div>
                                             )}
-                                          </div>
-                                        ))}
-                                        {isEditing && (
-                                          <div className="flex justify-end">
-                                            <button onClick={() => { const sr2 = savedReports.find(r => r.id === sr.id); if (sr2) updateSavedReport(sr.id, sr2.report); }}
-                                              className="flex items-center text-xs font-semibold px-4 py-2 rounded-lg" style={{ backgroundColor: '#0EA5E9', color: '#FFFFFF' }}>
-                                              <Save className="w-3.5 h-3.5 mr-1.5" />保存
-                                            </button>
-                                          </div>
+                                          </>
                                         )}
                                       </div>
                                     </motion.div>
