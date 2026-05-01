@@ -123,32 +123,42 @@ export default function App() {
   const [dashFilterWeekStart, setDashFilterWeekStart] = useState('');
   const [dashFilterMonth, setDashFilterMonth] = useState('');
 
-  // localStorage から読み込み
+  // Supabase から読み込み
   useEffect(() => {
-    try {
-      const saved = window.localStorage?.getItem('wl_saved_reports');
-      if (saved) setSavedReports(JSON.parse(saved));
-    } catch {}
+    supabase
+      .from('saved_reports')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .then(({ data }) => {
+        if (data) {
+          setSavedReports(data.map(r => ({ id: r.id, type: r.type, date: r.date, report: r.report, savedAt: r.created_at })));
+        }
+      });
   }, []);
 
-  const persistReports = (reports: SavedReport[]) => {
-    setSavedReports(reports);
-    try { window.localStorage?.setItem('wl_saved_reports', JSON.stringify(reports)); } catch {}
+  const saveReport = async (type: 'daily' | 'weekly' | 'monthly', date: string, report: ReportResult) => {
+    const { data, error } = await supabase
+      .from('saved_reports')
+      .insert([{ type, date, report }])
+      .select()
+      .single();
+    if (!error && data) {
+      setSavedReports(prev => [{ id: data.id, type: data.type, date: data.date, report: data.report, savedAt: data.created_at }, ...prev]);
+    }
   };
 
-  const saveReport = (type: 'daily' | 'weekly' | 'monthly', date: string, report: ReportResult) => {
-    const entry: SavedReport = { id: uid(), type, date, report, savedAt: new Date().toISOString() };
-    persistReports([entry, ...savedReports]);
-  };
-
-  const deleteReport = (id: string) => {
+  const deleteReport = async (id: string) => {
     if (!confirm('この記録を削除しますか？')) return;
-    persistReports(savedReports.filter(r => r.id !== id));
+    const { error } = await supabase.from('saved_reports').delete().eq('id', id);
+    if (!error) setSavedReports(prev => prev.filter(r => r.id !== id));
   };
 
-  const updateSavedReport = (id: string, updated: ReportResult) => {
-    persistReports(savedReports.map(r => r.id === id ? { ...r, report: updated } : r));
-    setEditingReportId(null);
+  const updateSavedReport = async (id: string, updated: ReportResult) => {
+    const { error } = await supabase.from('saved_reports').update({ report: updated }).eq('id', id);
+    if (!error) {
+      setSavedReports(prev => prev.map(r => r.id === id ? { ...r, report: updated } : r));
+      setEditingReportId(null);
+    }
   };
 
   /* ── Shared state ── */
@@ -375,7 +385,7 @@ export default function App() {
         const r = await generateForClient(tab.clientName, tab.projects);
         if (r) {
           results.push(r);
-          saveReport(type, date, r); // 自動保存
+          await saveReport(type, date, r); // 自動保存
           if (tab.email.trim()) saveEmailForClient(r.client, tab.email.trim());
         }
       }
@@ -387,7 +397,7 @@ export default function App() {
   };
 
   /** AI生成なしでそのまま保存 */
-  const saveDirectFromTabs = (type: 'daily' | 'weekly' | 'monthly', date: string, clientTabsData: ClientTab[]) => {
+  const saveDirectFromTabs = async (type: 'daily' | 'weekly' | 'monthly', date: string, clientTabsData: ClientTab[]) => {
     let count = 0;
     for (const tab of clientTabsData) {
       const validProjects = tab.projects.filter(p => p.name.trim());
@@ -409,7 +419,7 @@ export default function App() {
         })),
       };
 
-      saveReport(type, date, report);
+      await saveReport(type, date, report);
       if (tab.email.trim()) saveEmailForClient(formatted, tab.email.trim());
       count++;
     }
