@@ -6,7 +6,7 @@
 
 **Architecture:** Next.js 16 App Routerを独立アプリとして作り、Supabase Auth/Postgresを専用プロジェクトとして分離する。認証済みユーザーの更新はServer Actions、企業レビュー・撤回・異議申立ては期限付き能力トークンとOTPを検証するRoute Handler/Server Actionで処理し、公開ページは非公開テーブルから直接描画せず、承認済みフィールドだけを持つ公開プロジェクションから生成する。
 
-**Tech Stack:** Next.js 16.2.2、React 19、TypeScript、Tailwind CSS、Supabase Auth/Postgres/RLS、Zod、Resend、Nodemailer/Mailpit、Vitest、Testing Library、pgTAP、Playwright
+**Tech Stack:** Next.js 16.2.9、React 19、TypeScript、Tailwind CSS、Supabase Auth/Postgres/RLS、Zod、Resend、Nodemailer/Mailpit、Vitest、Testing Library、pgTAP、Playwright
 
 ---
 
@@ -73,12 +73,12 @@ trust-platform/
 - Test: `trust-platform/src/lib/env-schema.test.ts`
 - Modify: `trust-platform/package.json`
 
-- [ ] **Step 1: Next.js 16.2.2で独立アプリを生成する**
+- [ ] **Step 1: Next.js 16.2.9で独立アプリを生成する**
 
 Run:
 
 ```bash
-npx create-next-app@16.2.2 trust-platform \
+npx create-next-app@16.2.9 trust-platform \
   --typescript \
   --tailwind \
   --eslint \
@@ -89,7 +89,9 @@ npx create-next-app@16.2.2 trust-platform \
   --yes
 ```
 
-Expected: `trust-platform/package.json` が生成され、`next` が `16.2.2` 系になる。
+Expected: `trust-platform/package.json` が生成され、`next` が `16.2.9` 系になる。
+
+Security note: 2026-06-24時点の `npm audit --omit=dev` で Next.js 16.2.2 にhigh advisoryが出るため、MVP土台では16.2.9へ上げ、Next内部のPostCSS advisoryは `overrides.postcss=8.5.15` で解消する。
 
 - [ ] **Step 2: 実行・テスト依存関係を追加する**
 

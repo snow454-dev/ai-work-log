@@ -1,0 +1,51 @@
+{
+  "name": "trust-platform",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:e2e": "playwright test",
+    "db:start": "supabase start",
+    "db:stop": "supabase stop",
+    "db:reset": "supabase db reset",
+    "db:test": "supabase test db"
+  },
+  "dependencies": {
+    "@supabase/ssr": "^0.12.0",
+    "@supabase/supabase-js": "^2.108.2",
+    "next": "16.2.9",
+    "nodemailer": "^9.0.1",
+    "react": "19.2.4",
+    "react-dom": "19.2.4",
+    "resend": "^6.14.0",
+    "server-only": "^0.0.1",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.61.0",
+    "@tailwindcss/postcss": "^4",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@types/node": "^20",
+    "@types/nodemailer": "^8.0.1",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "@vitejs/plugin-react": "^6.0.3",
+    "eslint": "^9",
+    "eslint-config-next": "16.2.9",
+    "jsdom": "^29.1.1",
+    "supabase": "^2.107.0",
+    "tailwindcss": "^4",
+    "typescript": "^5",
+    "vitest": "^4.1.9"
+  },
+  "overrides": {
+    "postcss": "8.5.15"
+  }
+}
