@@ -1,0 +1,29 @@
+{
+  "manifest_version": 3,
+  "name": "Bing Maps Leads Extractor",
+  "version": "0.1.0",
+  "description": "Bing Mapsの検索結果から社内利用向けの事業者リストを作成します。",
+  "permissions": ["storage", "downloads"],
+  "host_permissions": [
+    "https://www.bing.com/maps*",
+    "https://www.bing.com/maps/*"
+  ],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://www.bing.com/maps*",
+        "https://www.bing.com/maps/*"
+      ],
+      "js": ["core.js", "content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "action": {
+    "default_title": "Bing Maps Leads Extractor"
+  }
+}
+
