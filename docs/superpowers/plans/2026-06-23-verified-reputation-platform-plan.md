@@ -684,6 +684,12 @@ create type public.project_status as enum (
 create type public.actor_type as enum ('professional', 'reviewer', 'system', 'admin');
 create type public.rehire_response as enum ('yes', 'maybe', 'no');
 create type public.consent_status as enum ('active', 'withdrawn', 'disputed');
+create type public.acquisition_source as enum (
+  'upwork', 'sankaku', 'other_platform', 'referral', 'direct', 'other'
+);
+create type public.sharing_preference as enum (
+  'share_public_profile', 'open_to_reference_request', 'not_now'
+);
 
 create table public.profiles (
   id uuid primary key default gen_random_uuid(),
@@ -721,6 +727,10 @@ create table public.project_revisions (
   company_name text not null check (char_length(company_name) between 1 and 200),
   company_website text,
   company_domain citext not null,
+  acquisition_source public.acquisition_source not null,
+  source_platform_label text check (
+    source_platform_label is null or char_length(source_platform_label) between 1 and 120
+  ),
   service_category text not null,
   project_start date,
   project_end date,
@@ -776,14 +786,17 @@ create table public.verifications (
   verification_request_id uuid not null unique references public.verification_requests(id),
   approved_revision_id uuid references public.project_revisions(id),
   project_existed boolean not null,
+  source_accurate boolean not null,
   role_accurate boolean not null,
   outcome_accurate boolean not null,
   metric_accurate boolean,
   rehire_response public.rehire_response,
+  sharing_preference public.sharing_preference not null default 'not_now',
   reviewer_name text,
   reviewer_job_title text,
   reviewer_comment text check (char_length(reviewer_comment) <= 1000),
   show_company_name boolean not null default false,
+  show_acquisition_source boolean not null default false,
   show_reviewer_name boolean not null default false,
   show_reviewer_job_title boolean not null default false,
   show_project_period boolean not null default false,
@@ -806,6 +819,8 @@ create table public.published_evidence (
   public_title text not null,
   public_service_category text not null,
   public_company_name text,
+  public_acquisition_source public.acquisition_source,
+  public_source_platform_label text,
   public_project_start date,
   public_project_end date,
   public_outcome_statement text,
@@ -1132,6 +1147,7 @@ describe("parseProjectDraft", () => {
         companyName: "Acme",
         companyDomain: "acme.com",
         reviewerEmail: "reviewer@gmail.com",
+        acquisitionSource: "upwork",
         serviceCategory: "AI automation",
         roleDescription: "Built the workflow",
         summary: "Automated reporting",
@@ -1155,6 +1171,8 @@ Expected: FAIL because parser does not exist.
 - [ ] **Step 3: 入力スキーマとServer Actionsを実装する**
 
 In `trust-platform/src/app/actions/projects.ts`, export a pure `parseProjectDraft` using Zod. Normalize domains with `new URL("https://" + domain).hostname`, lowercase them, reject a maintained consumer-domain set (`gmail.com`, `outlook.com`, `hotmail.com`, `yahoo.com`, `icloud.com`, `proton.me`, `protonmail.com`), and require `reviewerEmail.split("@")[1] === companyDomain`.
+
+Accept `acquisitionSource` as `upwork`, `sankaku`, `other_platform`, `referral`, `direct`, or `other`. Require `sourcePlatformLabel` only for `other_platform`. This records where the engagement began; it does not claim that the source platform verified the work.
 
 The `createProject` Server Action must:
 
@@ -1198,6 +1216,14 @@ type ProjectDraftFields = {
   companyWebsite?: string;
   companyDomain: string;
   reviewerEmail: string;
+  acquisitionSource:
+    | "upwork"
+    | "sankaku"
+    | "other_platform"
+    | "referral"
+    | "direct"
+    | "other";
+  sourcePlatformLabel?: string;
   serviceCategory: string;
   projectStart?: string;
   projectEnd?: string;
@@ -1604,6 +1630,7 @@ git commit -m "feat: secure company review access with email otp"
 Test:
 
 - `projectExisted=false` forces decline and no approved revision.
+- an inaccurate source must be corrected or hidden before approval.
 - corrected text creates a reviewer-authored immutable revision.
 - metric visibility cannot be true when no metric exists.
 - reviewer name/title visibility cannot be true when those fields are blank.
@@ -1627,6 +1654,15 @@ Expected: FAIL.
 ```ts
 {
   projectExisted: boolean;
+  sourceAccurate: boolean;
+  correctedAcquisitionSource?:
+    | "upwork"
+    | "sankaku"
+    | "other_platform"
+    | "referral"
+    | "direct"
+    | "other";
+  correctedSourcePlatformLabel?: string;
   roleAccurate: boolean;
   outcomeAccurate: boolean;
   metricAccurate: boolean | null;
@@ -1635,11 +1671,16 @@ Expected: FAIL.
   correctedOutcomeMetricValue?: number;
   correctedOutcomeMetricUnit?: string;
   rehireResponse: "yes" | "maybe" | "no" | null;
+  sharingPreference:
+    | "share_public_profile"
+    | "open_to_reference_request"
+    | "not_now";
   reviewerName?: string;
   reviewerJobTitle?: string;
   reviewerComment?: string;
   visibility: {
     companyName: boolean;
+    acquisitionSource: boolean;
     reviewerName: boolean;
     reviewerJobTitle: boolean;
     projectPeriod: boolean;
@@ -1673,9 +1714,11 @@ The transaction:
 Use a single page with:
 
 - factual confirmation controls.
+- engagement-source confirmation or correction.
 - inline correction fields.
 - optional reviewer attribution.
-- eight field-level visibility switches.
+- nine field-level visibility switches.
+- a sharing/reference preference explicitly separated from review sentiment and public consent.
 - exact public preview.
 - explicit consent checkbox.
 - final submit button.
@@ -1789,6 +1832,7 @@ type PublicProfileDTO = {
     title: string;
     serviceCategory: string;
     companyName: string | null;
+    acquisitionSource: string | null;
     projectPeriod: string | null;
     outcomeStatement: string | null;
     outcomeMetric: string | null;
@@ -1801,6 +1845,8 @@ type PublicProfileDTO = {
 ```
 
 The DTO queries only public profile fields and active `published_evidence`.
+
+When the reviewer approved source visibility, `acquisitionSource` is a human-readable value such as `Upwork`, `Sankaku`, `Referral`, or the approved custom platform label. The UI labels it as the engagement source, not as verification by that sourcing platform.
 
 - [ ] **Step 5: 公開ページとOG画像を実装する**
 
@@ -1846,6 +1892,7 @@ Test:
 - dispute sets consent `disputed`, evidence inactive, project `disputed`.
 - company-withdrawn evidence cannot be republished without a new verification.
 - repeated withdrawal/dispute is idempotent.
+- after publication, the OTP-protected receipt exposes only the public profile URL and safe share targets, never private project data in a share URL.
 
 - [ ] **Step 2: 失敗を確認する**
 
@@ -1882,6 +1929,7 @@ After OTP, show:
 
 - approved public preview.
 - consent status.
+- when evidence is published, copy-link, email, and LinkedIn share actions for the public profile.
 - `Withdraw public consent` destructive action.
 - `Report a dispute` action with required reason of 20–2000 characters.
 
@@ -2234,17 +2282,18 @@ git commit -m "feat: add accessible legal and public metadata"
 
 1. professional magic-link sign-in by reading Mailpit.
 2. onboarding.
-3. project creation.
+3. project creation with `Upwork` as the engagement source.
 4. verification invitation send.
 5. reviewer opens invitation.
 6. reviewer requests OTP and reads it from Mailpit.
-7. reviewer corrects outcome and selects only outcome visibility.
+7. reviewer confirms the source, corrects outcome, selects source and outcome visibility, and chooses `share_public_profile`.
 8. reviewer submits.
 9. professional publishes.
 10. public page shows corrected outcome and hides company/reviewer.
 11. reviewer receipt OTP.
-12. company withdrawal.
-13. public evidence disappears immediately.
+12. receipt page offers copy, email, and LinkedIn sharing for the published profile.
+13. company withdrawal.
+14. public evidence disappears immediately.
 
 `security.spec.ts` asserts:
 
@@ -2413,9 +2462,9 @@ Expected: both applications PASS without sharing runtime files or environment va
 Confirm no implementation exists for:
 
 - marketplace search.
-- introductions.
+- platform-managed introductions or matching.
 - payments.
-- referral rewards.
+- attributed referral rewards or company credits.
 - star ratings.
 - anonymous reviews.
 - contract/invoice uploads.

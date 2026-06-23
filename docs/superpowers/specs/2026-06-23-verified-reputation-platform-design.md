@@ -16,6 +16,9 @@ The MVP has one core flow:
 2. The platform sends a verification request to the client’s company email.
 3. The client reviews the claims, corrects or rejects them, and chooses exactly what may be public.
 4. The professional publishes the approved evidence on a shareable public profile.
+5. The client can reuse that public profile to recommend the professional to contacts or share it online.
+
+The original engagement may have started on Upwork, Sankaku, another freelance platform, through a referral, or by direct contract. The trust record is portable and does not depend on where the work was sourced.
 
 The initial market is:
 
@@ -23,7 +26,7 @@ The initial market is:
 - Demand context: companies in the United States and United Kingdom.
 - Product language: English first.
 
-The MVP does not include talent search, introductions, payments, escrow, referral commissions, or a public marketplace.
+The MVP does not include talent search, platform-managed introductions, payments, escrow, referral commissions, or a public marketplace. It does include ordinary sharing by the professional or client through a verified public-profile link.
 
 ## 2. Product Position
 
@@ -32,6 +35,8 @@ The product is not a general review site and not a freelance marketplace. It is 
 Its primary promise is:
 
 > Turn completed client work into client-approved, verifiable evidence that an independent professional can carry to future opportunities.
+
+The product sits above existing sourcing channels. A project may originate from Upwork, Sankaku, another marketplace, a community, a personal introduction, or a direct contract. No marketplace integration is required for the company that actually received the work to verify the engagement.
 
 The product must distinguish between:
 
@@ -49,6 +54,7 @@ Company-domain verification proves control of a mailbox on that domain. It must 
 - Let a professional create a credible project record in under ten minutes.
 - Let a client verify or reject it without creating an account.
 - Let the client independently control the public visibility of company name, reviewer identity, outcome details, metrics, and comments.
+- Let the client independently choose whether it is comfortable sharing the resulting verified profile or receiving a future reference request.
 - Produce a public profile that clearly separates verified evidence from self-authored content.
 - Allow a client to withdraw public consent or dispute evidence after publication.
 
@@ -65,6 +71,7 @@ Company-domain verification proves control of a mailbox on that domain. It must 
 - Median time from request sent to verification completed.
 - Percentage of verified projects that become public.
 - Percentage of public profiles shared at least once.
+- Percentage of company reviewers who opt in to share the profile or accept a future reference request.
 - Dispute and withdrawal rate.
 - Number of professionals with two or more verified projects.
 
@@ -73,7 +80,7 @@ Company-domain verification proves control of a mailbox on that domain. It must 
 The MVP will not include:
 
 - Talent discovery or marketplace search.
-- Company-to-company introductions.
+- Platform-managed company-to-company introductions or matching.
 - Platform payments, escrow, invoicing, or contracts.
 - Referral fees or rewards.
 - Public star ratings or aggregate reputation scores.
@@ -114,10 +121,12 @@ The reviewer can:
 
 - Authenticate through a time-limited invitation and email OTP.
 - Confirm whether the project existed.
+- Confirm or correct how the engagement originated.
 - Accept, correct, make private, or reject submitted claims.
 - State whether they would work with the professional again.
 - Add an optional short comment.
 - Select the public visibility of each sensitive field.
+- Choose, independently of their factual review and rehire response, whether they are comfortable sharing the resulting public profile or accepting a future reference request.
 - Preview exactly what will be public.
 - Submit once.
 - Later withdraw consent or open a dispute through a separate secure receipt link and a fresh email OTP.
@@ -153,6 +162,8 @@ The project form collects:
 - Client website, optional.
 - Company verification domain.
 - Reviewer company email.
+- Engagement source: `upwork`, `sankaku`, `other_platform`, `referral`, `direct`, or `other`.
+- Source platform label when `other_platform` is selected.
 - Service category.
 - Project period.
 - Professional’s role.
@@ -191,6 +202,7 @@ After successful invitation-token and OTP validation, the reviewer sees:
 The reviewer must answer:
 
 - Did this project or engagement exist?
+- Is the stated engagement source accurate?
 - Is the professional’s role accurate?
 - Is the outcome statement accurate?
 - Is the outcome metric accurate, if present?
@@ -205,11 +217,20 @@ For editable claims, the reviewer can:
 
 The reviewer may add an optional comment.
 
+The reviewer also chooses a non-public sharing preference:
+
+- `share_public_profile`: comfortable sharing the resulting public profile.
+- `open_to_reference_request`: open to a future reference request.
+- `not_now`: no sharing or reference commitment.
+
+This choice is independent of the reviewer’s factual answers, comment, rehire response, and visibility selections. The MVP never rewards a reviewer for positive sentiment.
+
 ### 6.5 Visibility consent
 
 The reviewer selects public visibility independently for:
 
 - Company name.
+- Engagement source.
 - Reviewer name.
 - Reviewer job title.
 - Project period.
@@ -239,6 +260,7 @@ The company reviewer receives a secure receipt containing:
 - A summary of what was approved.
 - A link to withdraw public consent.
 - A link to dispute the evidence.
+- When the evidence has been published, the public-profile URL and simple copy, email, and LinkedIn sharing actions.
 
 The receipt link identifies the verification but does not reveal sensitive details or authorize a change by itself. The reviewer must complete a fresh OTP challenge sent to the original company email before viewing the full receipt, withdrawing consent, or opening a dispute.
 
@@ -374,6 +396,8 @@ API and callback routes live under `app/api/` where a user-facing page exists at
 - `company_name`.
 - `company_website`, nullable.
 - `company_domain`.
+- `acquisition_source`.
+- `source_platform_label`, nullable.
 - `service_category`.
 - `project_start`, nullable.
 - `project_end`, nullable.
@@ -411,10 +435,12 @@ Revisions are immutable after they are attached to a sent request or submitted v
 - `verification_request_id` unique.
 - `approved_revision_id`, nullable when declined.
 - `project_existed`.
+- `source_accurate`.
 - `role_accurate`.
 - `outcome_accurate`.
 - `metric_accurate`, nullable.
 - `rehire_response`.
+- `sharing_preference`.
 - `reviewer_name`, nullable.
 - `reviewer_job_title`, nullable.
 - `reviewer_comment`, nullable.
@@ -435,6 +461,7 @@ A sanitized projection containing only fields approved for publication.
 - `project_id` unique.
 - Public title and category.
 - Approved public company label, nullable.
+- Approved engagement source and custom platform label, nullable.
 - Approved public outcome text, nullable.
 - Approved public metric fields, nullable.
 - Approved reviewer attribution, nullable.
@@ -649,6 +676,9 @@ The MVP is complete when:
 - Link plus email OTP validation is enforced.
 - Every private table has tested RLS policies.
 - The reviewer controls field-level public consent.
+- A project can record that it originated from Upwork, Sankaku, another platform, a referral, or a direct contract without requiring an integration.
+- A company reviewer can express a sharing/reference preference independently of the review outcome.
+- A company reviewer can share the published verified profile from the secure receipt.
 - Public evidence is generated from a sanitized projection.
 - Editing approved content requires re-verification.
 - Withdrawal and dispute immediately remove public evidence.
@@ -665,7 +695,7 @@ After the MVP proves verification demand:
 1. Company talent pools and reusable reviewer accounts.
 2. Company-to-company introduction requests.
 3. Search across public verified professionals.
-4. Referral incentives based on completed introductions, never on positive review sentiment.
+4. Attributed referral incentives or company credits based on completed introductions, never on positive review sentiment, review completion, or public visibility consent.
 5. Integrations with LinkedIn, CRMs, procurement systems, and freelance platforms.
 6. Payments, escrow, compliance, and contractor-management capabilities only after separate legal and operational design.
 
