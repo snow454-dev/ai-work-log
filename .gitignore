@@ -13,6 +13,9 @@
 # testing
 /coverage
 
+# isolated agent worktrees
+/.worktrees/
+
 # next.js
 /.next/
 /out/
