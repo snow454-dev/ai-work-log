@@ -300,31 +300,28 @@
   const candidateElements = () => {
     const containers = searchResultContainers();
     const root = containers[0] || document;
-    const selectors = [
-      "li[data-key]",
-      "[data-key].listingItem_fPE1q",
-      '[role="listitem"]',
-      '[data-entityid]',
-      '[data-id*="entity"]',
-      'a[href*="/maps?"]'
-    ];
-    const candidates = selectors.flatMap((selector) => Array.from(root.querySelectorAll(selector)));
-    return candidates.filter((element, index, all) => {
-      if (all.indexOf(element) !== index) return false;
+    const keyedCards = Array.from(root.querySelectorAll("li[data-key]"))
+      .filter((element) => /^YN[A-Z0-9]+$/i.test(element.getAttribute("data-key") || ""));
+    if (keyedCards.length > 0) return keyedCards;
+
+    // Bingの旧レイアウト用フォールバック。リンク単体は広告やWebサイトを
+    // 誤クリックするため、店舗見出しとボタンを持つカードだけに限定する。
+    const candidates = Array.from(root.querySelectorAll("[data-entityid], [role='listitem']"));
+    return candidates.filter((element) => {
       const text = Core.cleanText(element.textContent || element.getAttribute("aria-label"));
-      const href = element.closest("a")?.href || element.querySelector("a[href]")?.href || "";
+      const heading = element.querySelector("h2, h3, [role='heading']");
+      const button = element.querySelector("button");
       return text.length >= 2 && text.length <= 800 &&
-        (href || element.getAttribute("data-entityid") || element.getAttribute("data-key"));
+        Boolean(heading && button && element.getAttribute("data-entityid"));
     });
   };
 
   const candidateInfo = (element) => {
-    const anchor = element.matches("a[href]") ? element : element.querySelector("a[href]");
+    const button = element.querySelector("button");
     const name =
       Core.cleanText(element.querySelector('[role="heading"], h2, h3, .title')?.textContent) ||
       Core.cleanText(element.getAttribute("aria-label")) ||
       Core.cleanText(element.textContent).slice(0, 140);
-    const href = anchor?.href || "";
     const entityId = element.getAttribute("data-entityid") ||
       element.closest("[data-entityid]")?.getAttribute("data-entityid") || "";
     const dataKey = element.getAttribute("data-key") ||
@@ -334,10 +331,10 @@
         ? `entity:${entityId}`
         : dataKey
           ? `entity:${dataKey}`
-          : `candidate:${href || name.toLowerCase()}`,
+          : `candidate:${name.toLowerCase()}`,
       name,
-      href,
-      clickTarget: element.querySelector("button") || anchor || element
+      clickTarget: button,
+      card: element
     };
   };
 
@@ -374,6 +371,18 @@
   };
 
   const clickCandidate = async (candidate) => {
+    if (
+      !candidate.clickTarget ||
+      !candidate.clickTarget.isConnected ||
+      !candidate.card?.isConnected ||
+      !candidate.card.matches("li[data-key], [data-entityid], [role='listitem']") ||
+      (
+        candidate.card.hasAttribute("data-key") &&
+        !/^YN[A-Z0-9]+$/i.test(candidate.card.getAttribute("data-key") || "")
+      )
+    ) {
+      throw new Error("安全に操作できる店舗カードではありません");
+    }
     const previousHeading = Core.cleanText(
       getDetailRoot().querySelector('h2.eh_title,h1,[role="heading"][aria-level="1"]')?.textContent
     );
@@ -395,7 +404,10 @@
   };
 
   const scrollForMore = async () => {
-    const container = searchResultContainers()[0];
+    const resultContainer = searchResultContainers()[0];
+    const container = resultContainer?.matches(".b_lstcards")
+      ? resultContainer
+      : resultContainer?.closest(".b_lstcards") || resultContainer;
     if (!container) return false;
     const before = container.scrollHeight;
     container.scrollTo({ top: container.scrollHeight, behavior: "auto" });

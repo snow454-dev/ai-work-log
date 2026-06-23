@@ -9,6 +9,8 @@ Bing Mapsの検索結果から、画面に表示される事業者情報を最�
 3. 「パッケージ化されていない拡張機能を読み込む」を選ぶ。
 4. この `bing-maps-leads-extractor` フォルダを選ぶ。
 
+更新時は `chrome://extensions` で本拡張の再読み込みボタンを押し、開いているBing Mapsも再読み込みしてください。
+
 ## 使い方
 
 1. `https://www.bing.com/maps` を開く。
