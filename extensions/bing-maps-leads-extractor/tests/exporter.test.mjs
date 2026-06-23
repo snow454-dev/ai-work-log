@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { createCsv, createXlsx } from "../exporter.js";
 
 const lead = {
+  searchCategory: "IT企業",
   name: "テスト株式会社",
   category: "IT",
   address: "東京都",
@@ -21,6 +22,8 @@ const lead = {
 test("CSVはBOMと日本語ヘッダーを含む", () => {
   const csv = createCsv([lead]);
   assert.equal(csv.charCodeAt(0), 0xFEFF);
+  assert.match(csv, /^﻿"検索カテゴリ","店名"/);
+  assert.match(csv, /"IT企業","テスト株式会社"/);
   assert.match(csv, /"店名"/);
   assert.match(csv, /"テスト株式会社"/);
 });
@@ -31,4 +34,3 @@ test("XLSXはZIPシグネチャを持つ", () => {
   assert.equal(xlsx[1], 0x4B);
   assert.ok(xlsx.length > 500);
 });
-

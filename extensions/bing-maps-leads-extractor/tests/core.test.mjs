@@ -19,6 +19,14 @@ test("Bing Mapsのypidを一意キーに使う", () => {
   assert.equal(Core.leadKey(lead), "map:YN123ABC");
 });
 
+test("検索結果見出しを検索カテゴリとして優先する", () => {
+  assert.equal(Core.inferSearchCategory("リフォーム", "江別 リフォーム"), "リフォーム");
+});
+
+test("見出しがない場合は検索語の末尾を検索カテゴリにする", () => {
+  assert.equal(Core.inferSearchCategory("", "江別 リフォーム"), "リフォーム");
+});
+
 test("店名と住所で重複を除去する", () => {
   const input = [
     { ...Core.emptyLead(), name: "株式会社 テスト", address: "東京都 千代田区 1-1" },

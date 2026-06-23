@@ -13,6 +13,7 @@
   const defaultState = () => ({
     status: "idle",
     limit: 500,
+    searchCategory: "",
     leads: [],
     processedKeys: [],
     duplicateCount: 0,
@@ -275,6 +276,16 @@
 
   const sleep = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds));
 
+  const detectSearchCategory = () => {
+    const heading = document.querySelector(
+      ".locMagListTitle h2.b_entityTitle, h2.b_entityTitle:not(.eh_title)"
+    )?.textContent;
+    const query = document.querySelector(
+      'input[aria-label*="Bing 地図を検索"], input[aria-label*="Search Bing Maps" i], input[type="search"]'
+    )?.value;
+    return Core.inferSearchCategory(heading, query);
+  };
+
   const waitUntilRunnable = async () => {
     while (pauseRequested && !stopRequested) await sleep(250);
     if (stopRequested) throw new DOMException("Stopped", "AbortError");
@@ -455,6 +466,7 @@
             try {
               const root = await clickCandidate(next);
               const lead = Core.parseLead(root, location.href);
+              lead.searchCategory = state.searchCategory || detectSearchCategory();
               if (!lead.name) lead.name = next.name;
               await appendLead(lead);
               captured = true;
@@ -524,6 +536,7 @@
       host.style.display = "none";
     } else if (action === "start") {
       state.limit = Math.max(1, Math.min(MAX_LIMIT, Number(views.limit.value) || MAX_LIMIT));
+      state.searchCategory = detectSearchCategory();
       if (state.status === "completed" || state.status === "stopped") {
         state.processedKeys = [];
       }

@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Bing Maps Leads Extractor",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Bing Mapsの検索結果から社内利用向けの事業者リストを作成します。",
   "permissions": ["storage", "downloads"],
   "host_permissions": [

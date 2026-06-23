@@ -2,6 +2,7 @@
   "use strict";
 
   const emptyLead = () => ({
+    searchCategory: "",
     name: "",
     category: "",
     address: "",
@@ -25,6 +26,13 @@
       .trim();
 
   const normalizePhone = (value) => cleanText(value).replace(/[^\d+]/g, "");
+
+  const inferSearchCategory = (resultHeading, searchQuery) => {
+    const heading = cleanText(resultHeading);
+    if (heading) return heading;
+    const queryParts = cleanText(searchQuery).split(" ").filter(Boolean);
+    return queryParts.at(-1) || "";
+  };
 
   const firstText = (root, selectors) => {
     for (const selector of selectors) {
@@ -220,6 +228,7 @@
     emptyLead,
     cleanText,
     normalizePhone,
+    inferSearchCategory,
     coordinateFromUrl,
     parseLead,
     leadKey,

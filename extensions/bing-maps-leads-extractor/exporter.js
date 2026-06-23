@@ -1,4 +1,5 @@
 const COLUMNS = [
+  ["searchCategory", "検索カテゴリ"],
   ["name", "店名"],
   ["category", "カテゴリ"],
   ["address", "住所"],
@@ -178,4 +179,3 @@ export const bytesToBase64 = (bytes) => {
   }
   return btoa(binary);
 };
-
