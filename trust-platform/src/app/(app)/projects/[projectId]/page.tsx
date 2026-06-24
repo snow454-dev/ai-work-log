@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { sendVerificationRequestForm } from "@/app/actions/verification-requests";
 import { getCurrentUserId } from "@/data/auth";
 import { getProjectForUser } from "@/data/projects";
 
@@ -60,9 +61,13 @@ export default async function ProjectDetailPage({
         </div>
       </div>
 
-      <section className="grid gap-4 md:grid-cols-3">
+      <section className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <InfoCard label="Service" value={project.serviceCategory} />
         <InfoCard label="Source" value={sourceLabel} />
+        <InfoCard
+          label="Reviewer"
+          value={project.reviewerEmail ?? "Not provided"}
+        />
         <InfoCard
           label="Period"
           value={formatPeriod(project.projectStart, project.projectEnd)}
@@ -101,7 +106,23 @@ export default async function ProjectDetailPage({
         <ActionCard
           title="Company verification"
           description="Next step: send a secure review link to a company-domain email. The reviewer can approve, correct, decline, or limit what becomes public."
-          status="Coming in the next task"
+          status={
+            project.status === "draft" || project.status === "expired"
+              ? "Ready to send"
+              : "Already sent"
+          }
+          action={
+            project.status === "draft" || project.status === "expired" ? (
+              <form action={sendVerificationRequestForm.bind(null, project.id)}>
+                <button
+                  type="submit"
+                  className="mt-4 rounded-full bg-zinc-950 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800 focus:outline-none focus:ring-2 focus:ring-zinc-950 focus:ring-offset-2"
+                >
+                  Send verification request
+                </button>
+              </form>
+            ) : null
+          }
         />
         <ActionCard
           title="Publication controls"
@@ -149,16 +170,19 @@ function ActionCard({
   title,
   description,
   status,
+  action,
 }: {
   title: string;
   description: string;
   status: string;
+  action?: React.ReactNode;
 }) {
   return (
     <div className="rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm">
       <p className="text-xs font-medium uppercase text-zinc-500">{status}</p>
       <h2 className="mt-2 text-lg font-semibold text-zinc-950">{title}</h2>
       <p className="mt-2 text-sm text-zinc-600 text-pretty">{description}</p>
+      {action}
     </div>
   );
 }

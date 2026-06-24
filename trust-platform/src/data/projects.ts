@@ -29,6 +29,7 @@ export type ProjectListItem = {
 export type ProjectDetail = ProjectListItem & {
   acquisitionSource: ProjectDraftInput["acquisitionSource"];
   sourcePlatformLabel: string | null;
+  reviewerEmail: string | null;
   companyDomain: string;
   companyWebsite: string | null;
   projectStart: string | null;
@@ -45,6 +46,7 @@ type ProjectRow = {
   id: string;
   status: ProjectStatus;
   current_revision_id: string | null;
+  reviewer_email: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -88,6 +90,7 @@ function toProjectDetail(project: ProjectRow, revision: RevisionRow): ProjectDet
     ...toProjectListItem(project, revision),
     acquisitionSource: revision.acquisition_source,
     sourcePlatformLabel: revision.source_platform_label,
+    reviewerEmail: project.reviewer_email,
     companyDomain: revision.company_domain,
     companyWebsite: revision.company_website,
     projectStart: revision.project_start,
@@ -113,6 +116,7 @@ export async function insertProjectWithRevision({
     p_company_name: input.companyName,
     p_company_website: input.companyWebsite,
     p_company_domain: input.companyDomain,
+    p_reviewer_email: input.reviewerEmail,
     p_acquisition_source: input.acquisitionSource,
     p_source_platform_label: input.sourcePlatformLabel,
     p_service_category: input.serviceCategory,
@@ -140,7 +144,7 @@ export async function listProjectsForUser(
   const supabase = await createClient();
   const { data: projects, error: projectsError } = await supabase
     .from("projects")
-    .select("id,status,current_revision_id,created_at,updated_at")
+    .select("id,status,current_revision_id,reviewer_email,created_at,updated_at")
     .eq("owner_id", userId)
     .order("updated_at", { ascending: false });
 
@@ -194,7 +198,7 @@ export async function getProjectForUser({
   const supabase = await createClient();
   const { data: project, error: projectError } = await supabase
     .from("projects")
-    .select("id,status,current_revision_id,created_at,updated_at")
+    .select("id,status,current_revision_id,reviewer_email,created_at,updated_at")
     .eq("owner_id", userId)
     .eq("id", projectId)
     .maybeSingle();
