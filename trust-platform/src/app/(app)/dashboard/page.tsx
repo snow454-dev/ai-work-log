@@ -3,6 +3,10 @@ import Link from "next/link";
 import { getCurrentUserId } from "@/data/auth";
 import { listProjectsForUser, type ProjectListItem } from "@/data/projects";
 import { getProfileForUser } from "@/data/profiles";
+import {
+  listReferenceRequestsForOwner,
+  type ReferenceRequestListItem,
+} from "@/data/reference-requests";
 import type { ProjectStatus } from "@/domain/project-status";
 
 const statusLabels: Record<ProjectStatus, string> = {
@@ -19,9 +23,10 @@ const statusLabels: Record<ProjectStatus, string> = {
 
 export default async function DashboardPage() {
   const userId = await getCurrentUserId();
-  const [profile, projects] = await Promise.all([
+  const [profile, projects, referenceRequests] = await Promise.all([
     getProfileForUser(userId),
     listProjectsForUser(userId),
+    listReferenceRequestsForOwner(),
   ]);
 
   const verifiedCount = projects.filter((project) =>
@@ -68,6 +73,37 @@ export default async function DashboardPage() {
         <MetricCard label="Projects" value={projects.length} />
         <MetricCard label="Pending company review" value={pendingCount} />
         <MetricCard label="Verified proof" value={verifiedCount} />
+      </section>
+
+      <section className="rounded-3xl border border-zinc-200 bg-white shadow-sm">
+        <div className="flex items-center justify-between border-b border-zinc-200 px-6 py-4">
+          <div>
+            <h2 className="text-lg font-semibold text-zinc-950">
+              Reference requests
+            </h2>
+            <p className="text-sm text-zinc-500">
+              Requests from prospects who found a reference path on your public
+              proof.
+            </p>
+          </div>
+          <span className="rounded-full bg-zinc-100 px-3 py-1 text-xs font-medium text-zinc-700 tabular-nums">
+            {referenceRequests.length}
+          </span>
+        </div>
+        {referenceRequests.length === 0 ? (
+          <div className="px-6 py-8">
+            <p className="text-sm text-zinc-500 text-pretty">
+              No reference requests yet. When a prospect submits one, it will
+              appear here before any company reviewer is contacted.
+            </p>
+          </div>
+        ) : (
+          <ul className="divide-y divide-zinc-200">
+            {referenceRequests.map((request) => (
+              <ReferenceRequestRow key={request.id} request={request} />
+            ))}
+          </ul>
+        )}
       </section>
 
       {!profile ? (
@@ -139,6 +175,48 @@ function EmptyProjects() {
         Add completed project
       </Link>
     </div>
+  );
+}
+
+function ReferenceRequestRow({
+  request,
+}: {
+  request: ReferenceRequestListItem;
+}) {
+  return (
+    <li className="px-6 py-5">
+      <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+        <div>
+          <p className="text-sm font-medium text-zinc-950">
+            {request.requesterName} · {request.requesterCompany}
+          </p>
+          <p className="mt-1 text-sm text-zinc-500">
+            {request.publicTitle}
+          </p>
+          <p className="mt-3 max-w-2xl text-sm leading-6 text-zinc-700 text-pretty">
+            {request.opportunityContext}
+          </p>
+          {request.message ? (
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-zinc-500 text-pretty">
+              {request.message}
+            </p>
+          ) : null}
+        </div>
+        <div className="text-left md:text-right">
+          <span className="inline-flex rounded-full bg-zinc-100 px-3 py-1 text-xs font-medium capitalize text-zinc-700">
+            {request.status}
+          </span>
+          <p className="mt-2 text-sm text-zinc-500">
+            {request.requesterEmail}
+          </p>
+          {request.requesterRole ? (
+            <p className="mt-1 text-sm text-zinc-500">
+              {request.requesterRole}
+            </p>
+          ) : null}
+        </div>
+      </div>
+    </li>
   );
 }
 

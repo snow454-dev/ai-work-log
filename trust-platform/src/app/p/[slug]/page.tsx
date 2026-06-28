@@ -138,7 +138,11 @@ export default async function PublicProfilePage({
           ) : (
             <ul className="mt-5 grid gap-5">
               {profile.evidence.map((evidence) => (
-                <EvidenceCard key={evidence.id} evidence={evidence} />
+                <EvidenceCard
+                  key={evidence.id}
+                  evidence={evidence}
+                  profileSlug={profile.slug}
+                />
               ))}
             </ul>
           )}
@@ -165,7 +169,13 @@ function ProfileMeta({
   );
 }
 
-function EvidenceCard({ evidence }: { evidence: PublicEvidenceRecord }) {
+function EvidenceCard({
+  evidence,
+  profileSlug,
+}: {
+  evidence: PublicEvidenceRecord;
+  profileSlug: string;
+}) {
   const source = formatSource(evidence);
   const metric = formatMetric(evidence);
   const period = formatPeriod(
@@ -239,6 +249,12 @@ function EvidenceCard({ evidence }: { evidence: PublicEvidenceRecord }) {
             through Proofboard. Reviewer contact details stay private unless a
             future request is explicitly accepted.
           </p>
+          <Link
+            href={`/p/${profileSlug}/reference/${evidence.id}`}
+            className="mt-4 inline-flex rounded-full bg-zinc-950 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800 focus:outline-none focus:ring-2 focus:ring-zinc-950 focus:ring-offset-2"
+          >
+            Request reference path
+          </Link>
         </div>
       ) : null}
 
