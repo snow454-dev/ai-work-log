@@ -1,9 +1,11 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { publishProjectEvidence } from "@/app/actions/publication";
 import { sendVerificationRequestForm } from "@/app/actions/verification-requests";
 import { getCurrentUserId } from "@/data/auth";
 import { getProjectForUser } from "@/data/projects";
+import { getProfileForUser } from "@/data/profiles";
 
 const acquisitionLabels = {
   upwork: "Upwork",
@@ -16,14 +18,20 @@ const acquisitionLabels = {
 
 export default async function ProjectDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ projectId: string }>;
+  searchParams: Promise<{ publish?: string | string[] }>;
 }) {
-  const [{ projectId }, userId] = await Promise.all([
+  const [{ projectId }, query, userId] = await Promise.all([
     params,
+    searchParams,
     getCurrentUserId(),
   ]);
-  const project = await getProjectForUser({ projectId, userId });
+  const [project, profile] = await Promise.all([
+    getProjectForUser({ projectId, userId }),
+    getProfileForUser(userId),
+  ]);
 
   if (!project) {
     notFound();
@@ -34,6 +42,12 @@ export default async function ProjectDetailPage({
     project.sourcePlatformLabel
       ? project.sourcePlatformLabel
       : acquisitionLabels[project.acquisitionSource];
+  const publishStatus = Array.isArray(query.publish)
+    ? query.publish[0]
+    : query.publish;
+  const publicProfileHref = profile?.isPublic ? `/p/${profile.slug}` : null;
+  const canPublish =
+    project.status === "verified" || project.status === "published";
 
   return (
     <div className="mx-auto max-w-5xl space-y-8">
@@ -60,6 +74,16 @@ export default async function ProjectDetailPage({
           </div>
         </div>
       </div>
+
+      {publishStatus === "failed" ? (
+        <div
+          role="alert"
+          className="rounded-3xl border border-amber-200 bg-amber-50 p-5 text-sm text-amber-950"
+        >
+          This proof cannot be published yet. Confirm the project is verified,
+          your profile exists, and the company allowed public profile sharing.
+        </div>
+      ) : null}
 
       <section className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <InfoCard label="Service" value={project.serviceCategory} />
@@ -126,8 +150,40 @@ export default async function ProjectDetailPage({
         />
         <ActionCard
           title="Publication controls"
-          description="After verification, publish only the consented evidence fields as a public proof card."
-          status="Locked until verified"
+          description="Publish a public proof card only after company verification and only with fields the company allowed."
+          status={
+            project.status === "published"
+              ? "Published"
+              : canPublish
+                ? "Ready if company allowed sharing"
+                : "Locked until verified"
+          }
+          action={
+            project.status === "published" && publicProfileHref ? (
+              <Link
+                href={publicProfileHref}
+                className="mt-4 inline-flex rounded-full bg-zinc-950 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800 focus:outline-none focus:ring-2 focus:ring-zinc-950 focus:ring-offset-2"
+              >
+                View public profile
+              </Link>
+            ) : canPublish && profile ? (
+              <form action={publishProjectEvidence.bind(null, project.id)}>
+                <button
+                  type="submit"
+                  className="mt-4 rounded-full bg-zinc-950 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800 focus:outline-none focus:ring-2 focus:ring-zinc-950 focus:ring-offset-2"
+                >
+                  Publish verified proof
+                </button>
+              </form>
+            ) : canPublish ? (
+              <Link
+                href="/onboarding"
+                className="mt-4 inline-flex rounded-full bg-zinc-950 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800 focus:outline-none focus:ring-2 focus:ring-zinc-950 focus:ring-offset-2"
+              >
+                Create profile first
+              </Link>
+            ) : null
+          }
         />
       </section>
     </div>

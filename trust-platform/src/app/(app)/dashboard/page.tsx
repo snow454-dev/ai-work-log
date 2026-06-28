@@ -45,12 +45,22 @@ export default async function DashboardPage() {
               only the evidence the company approved.
             </p>
           </div>
-          <Link
-            href="/projects/new"
-            className="inline-flex items-center justify-center rounded-full bg-zinc-950 px-5 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-zinc-800 focus:outline-none focus:ring-2 focus:ring-zinc-950 focus:ring-offset-2"
-          >
-            Add completed project
-          </Link>
+          <div className="flex flex-col gap-3 sm:flex-row">
+            {profile?.isPublic ? (
+              <Link
+                href={`/p/${profile.slug}`}
+                className="inline-flex items-center justify-center rounded-full border border-zinc-300 bg-white px-5 py-2.5 text-sm font-medium text-zinc-950 shadow-sm hover:bg-zinc-50 focus:outline-none focus:ring-2 focus:ring-zinc-950 focus:ring-offset-2"
+              >
+                View public profile
+              </Link>
+            ) : null}
+            <Link
+              href="/projects/new"
+              className="inline-flex items-center justify-center rounded-full bg-zinc-950 px-5 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-zinc-800 focus:outline-none focus:ring-2 focus:ring-zinc-950 focus:ring-offset-2"
+            >
+              Add completed project
+            </Link>
+          </div>
         </div>
       </section>
 
