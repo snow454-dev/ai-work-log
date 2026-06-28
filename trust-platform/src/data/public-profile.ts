@@ -36,6 +36,7 @@ const publicEvidenceRowSchema = z.object({
   public_reviewer_job_title: z.string().nullable(),
   public_reviewer_comment: z.string().nullable(),
   public_rehire_response: z.enum(rehireResponses).nullable(),
+  public_reference_available: z.boolean(),
   verification_badge: z.literal("company_domain_verified"),
   published_at: z.string(),
 });
@@ -77,6 +78,7 @@ function toPublicEvidenceRecord(
     publicReviewerJobTitle: row.public_reviewer_job_title,
     publicReviewerComment: row.public_reviewer_comment,
     publicRehireResponse: row.public_rehire_response,
+    publicReferenceAvailable: row.public_reference_available,
     publishedAt: row.published_at,
   };
 }

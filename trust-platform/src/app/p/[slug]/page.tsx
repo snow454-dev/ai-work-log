@@ -81,6 +81,14 @@ export default async function PublicProfilePage({
               </p>
               <dl className="mt-5 space-y-3 text-sm">
                 <ProfileMeta label="Verified proof" value={profile.evidence.length} />
+                <ProfileMeta
+                  label="Reference paths"
+                  value={
+                    profile.evidence.filter(
+                      (evidence) => evidence.publicReferenceAvailable,
+                    ).length
+                  }
+                />
                 <ProfileMeta label="Country" value={profile.countryCode} />
                 <ProfileMeta label="Time zone" value={profile.timeZone} />
               </dl>
@@ -179,6 +187,11 @@ function EvidenceCard({ evidence }: { evidence: PublicEvidenceRecord }) {
             <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700">
               Company-domain verified
             </span>
+            {evidence.publicReferenceAvailable ? (
+              <span className="rounded-full bg-zinc-100 px-3 py-1 text-xs font-medium text-zinc-700">
+                Reference path available
+              </span>
+            ) : null}
             <span className="rounded-full bg-zinc-100 px-3 py-1 text-xs font-medium text-zinc-700">
               {evidence.publicServiceCategory}
             </span>
@@ -212,6 +225,19 @@ function EvidenceCard({ evidence }: { evidence: PublicEvidenceRecord }) {
           </h4>
           <p className="mt-2 text-zinc-800 text-pretty">
             {evidence.publicOutcomeStatement}
+          </p>
+        </div>
+      ) : null}
+
+      {evidence.publicReferenceAvailable ? (
+        <div className="mt-6 rounded-2xl border border-zinc-200 bg-zinc-50 p-5">
+          <h4 className="text-sm font-semibold text-zinc-950">
+            Structured reference path
+          </h4>
+          <p className="mt-2 text-sm leading-6 text-zinc-600 text-pretty">
+            The company reviewer allowed future reference requests to be routed
+            through Proofboard. Reviewer contact details stay private unless a
+            future request is explicitly accepted.
           </p>
         </div>
       ) : null}

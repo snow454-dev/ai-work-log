@@ -53,7 +53,7 @@ export function VerificationReviewForm({
       <section className="space-y-4">
         <SectionTitle
           title="Reference preference"
-          description="This is separate from whether the facts are accurate."
+          description="This is separate from whether the facts are accurate. Proofboard never exposes your email publicly."
         />
         <Select
           name="rehireResponse"
@@ -69,10 +69,17 @@ export function VerificationReviewForm({
           label="How may this verification be used?"
           options={[
             ["share_public_profile", "They may show approved fields publicly"],
-            ["open_to_reference_request", "Open to future reference requests"],
+            [
+              "open_to_reference_request",
+              "Reference requests only; do not publish as proof",
+            ],
             ["not_now", "Not now"],
           ]}
           required
+        />
+        <Checkbox
+          name="openToReferenceRequests"
+          label="I am open to structured future reference requests through Proofboard"
         />
       </section>
 

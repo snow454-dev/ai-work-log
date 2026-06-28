@@ -1,5 +1,5 @@
 begin;
-select plan(9);
+select plan(10);
 
 select has_function(
   'public',
@@ -31,6 +31,14 @@ select ok(
     in pg_get_functiondef('public.publish_verified_evidence(uuid)'::regprocedure)
   ) > 0,
   'publish_verified_evidence copies only consent-controlled fields'
+);
+
+select ok(
+  position(
+    'public_reference_available'
+    in pg_get_functiondef('public.publish_verified_evidence(uuid)'::regprocedure)
+  ) > 0,
+  'publish_verified_evidence copies reference availability without exposing contact details'
 );
 
 select ok(

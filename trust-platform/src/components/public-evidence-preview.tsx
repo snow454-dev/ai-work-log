@@ -20,6 +20,7 @@ export function PublicEvidencePreview({ context }: { context: ReviewContext }) {
       reviewerJobTitle: null,
       reviewerComment: null,
       rehireResponse: null,
+      openToReferenceRequests: false,
       showCompanyName: true,
       showAcquisitionSource: true,
       showReviewerName: false,

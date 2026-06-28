@@ -22,6 +22,7 @@ describe("buildPublicEvidence", () => {
         reviewerJobTitle: "COO",
         reviewerComment: "Excellent",
         rehireResponse: "yes",
+        openToReferenceRequests: false,
         showCompanyName: false,
         showReviewerName: false,
         showReviewerJobTitle: false,
@@ -50,6 +51,7 @@ describe("buildPublicEvidence", () => {
       publicRehireResponse: null,
       publicAcquisitionSource: null,
       publicSourcePlatformLabel: null,
+      publicReferenceAvailable: false,
     });
   });
 
@@ -72,6 +74,7 @@ describe("buildPublicEvidence", () => {
         reviewerJobTitle: "VP Operations",
         reviewerComment: "Would hire again.",
         rehireResponse: "yes",
+        openToReferenceRequests: true,
         showCompanyName: true,
         showReviewerName: false,
         showReviewerJobTitle: false,
@@ -100,6 +103,7 @@ describe("buildPublicEvidence", () => {
       publicRehireResponse: "yes",
       publicAcquisitionSource: "other_platform",
       publicSourcePlatformLabel: "Contra",
+      publicReferenceAvailable: true,
     });
   });
 });

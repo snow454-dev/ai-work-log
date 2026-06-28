@@ -28,6 +28,7 @@ const verificationSchema = z
       "open_to_reference_request",
       "not_now",
     ]),
+    openToReferenceRequests: z.boolean().default(false),
     reviewerName: z.string().trim().max(120).nullable(),
     reviewerJobTitle: z.string().trim().max(160).nullable(),
     reviewerComment: z.string().trim().max(1000).nullable(),
@@ -72,6 +73,18 @@ const verificationSchema = z
         code: "custom",
         path: ["reviewerComment"],
         message: "Reviewer comment is required when it is public.",
+      });
+    }
+
+    if (
+      value.openToReferenceRequests &&
+      value.sharingPreference === "not_now"
+    ) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["openToReferenceRequests"],
+        message:
+          "Reference requests cannot be enabled when this verification is not shareable.",
       });
     }
   });

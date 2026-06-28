@@ -32,6 +32,7 @@ export type PublicEvidenceVerification = {
   reviewerJobTitle: string | null;
   reviewerComment: string | null;
   rehireResponse: RehireResponse | null;
+  openToReferenceRequests: boolean;
   showCompanyName: boolean;
   showAcquisitionSource: boolean;
   showReviewerName: boolean;
@@ -64,6 +65,7 @@ export type PublicEvidence = {
   publicReviewerJobTitle: string | null;
   publicReviewerComment: string | null;
   publicRehireResponse: RehireResponse | null;
+  publicReferenceAvailable: boolean;
 };
 
 export function buildPublicEvidence({
@@ -108,5 +110,6 @@ export function buildPublicEvidence({
     publicRehireResponse: verification.showRehireResponse
       ? verification.rehireResponse
       : null,
+    publicReferenceAvailable: verification.openToReferenceRequests,
   };
 }

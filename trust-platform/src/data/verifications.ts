@@ -123,6 +123,7 @@ export async function submitVerification({
     p_metric_accurate: input.metricAccurate,
     p_rehire_response: input.rehireResponse,
     p_sharing_preference: input.sharingPreference,
+    p_open_to_reference_requests: input.openToReferenceRequests,
     p_reviewer_name: input.reviewerName,
     p_reviewer_job_title: input.reviewerJobTitle,
     p_reviewer_comment: input.reviewerComment,

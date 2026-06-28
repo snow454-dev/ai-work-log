@@ -14,6 +14,7 @@ const validInput = {
   hasOutcomeMetric: true,
   rehireResponse: "yes",
   sharingPreference: "share_public_profile",
+  openToReferenceRequests: true,
   reviewerName: "Alex",
   reviewerJobTitle: "COO",
   reviewerComment: "Excellent work.",
@@ -73,5 +74,15 @@ describe("Reviewer verification input", () => {
         consentConfirmed: false,
       }),
     ).toThrow("Explicit consent is required");
+  });
+
+  it("rejects reference requests when the verification is not shareable", () => {
+    expect(() =>
+      parseReviewerVerification({
+        ...validInput,
+        sharingPreference: "not_now",
+        openToReferenceRequests: true,
+      }),
+    ).toThrow("Reference requests cannot be enabled");
   });
 });

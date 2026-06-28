@@ -47,6 +47,7 @@ function parseForm(formData: FormData): unknown {
     hasOutcomeMetric: checkbox(formData, "hasOutcomeMetric"),
     rehireResponse: optionalText(formData, "rehireResponse"),
     sharingPreference: optionalText(formData, "sharingPreference"),
+    openToReferenceRequests: checkbox(formData, "openToReferenceRequests"),
     reviewerName: optionalText(formData, "reviewerName"),
     reviewerJobTitle: optionalText(formData, "reviewerJobTitle"),
     reviewerComment: optionalText(formData, "reviewerComment"),
