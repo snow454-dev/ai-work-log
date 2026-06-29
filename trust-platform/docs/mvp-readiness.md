@@ -4,7 +4,7 @@
 
 The MVP is ready for local product review, founder demos, and trusted design-partner walkthroughs.
 
-It is not ready for open public launch until deployment, production email, legal review, and operational monitoring are configured.
+It is close to a controlled private beta, but it is not ready for open public launch until production email, legal review, abuse handling, support workflows, and operational monitoring are configured.
 
 ## Local real-data smoke test
 
@@ -30,9 +30,10 @@ It is not ready for open public launch until deployment, production email, legal
 
 5. Open these URLs:
 
-   - Static UI preview: `http://localhost:3000/demo`
-   - Seeded public profile: `http://localhost:3000/p/aiko-demo`
-   - Seeded reference request form: `http://localhost:3000/p/aiko-demo/reference/00000000-0000-4000-8000-000000000501`
+   - Static UI preview: `http://localhost:3000/demo?lang=ja`
+   - Health check: `http://localhost:3000/api/health`
+   - Seeded public profile: `http://localhost:3000/p/aiko-demo?lang=ja`
+   - Seeded reference request form: `http://localhost:3000/p/aiko-demo/reference/00000000-0000-4000-8000-000000000501?lang=ja`
 
 ## What works now
 
@@ -47,19 +48,26 @@ It is not ready for open public launch until deployment, production email, legal
 - Owner accept/decline workflow for reference requests
 - Basic DB-level public-form rate limiting
 - Beta privacy notice, terms, and consent links
+- Japanese support across the public UI, workspace, and company review flow
+- Runtime health endpoint for deployment smoke checks
+- Environment checker for local and production beta settings
 - Local demo page and seeded public proof data
 
 ## Before a private beta
 
 - Deploy Supabase migrations to a real project
 - Configure production env vars and email transport
+- Run `npm run beta:check-env:prod` in the deployment environment
+- Confirm `/api/health` returns `ok: true`
 - Run DB tests against a working local or staging Supabase instance
 - Review beta privacy notice and terms for the first design partners
 - Invite only known users and companies for the first cohort
+
+See `docs/private-beta-runbook.md` for the full release checklist.
 
 ## Rough remaining effort
 
 - Founder demo / clickable prototype: done
 - Local real-data smoke test: less than 1 day after local Supabase is available
-- Private beta with 3-5 known users: 1-2 focused workdays after deployment credentials are ready
+- Private beta with 3-5 known users: roughly 1 focused workday after deployment credentials and production email are ready
 - Public launch candidate: 1-2 weeks, mostly deployment, legal, security, and operational hardening

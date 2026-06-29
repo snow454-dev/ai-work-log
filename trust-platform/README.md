@@ -1,36 +1,70 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Proofboard
 
-## Getting Started
+Proofboard is a private-beta platform for independent professionals to turn completed client work into company-approved proof and consented reference paths.
 
-First, run the development server:
+The core loop is:
+
+1. A professional records a completed engagement.
+2. Proofboard sends a secure verification request to a company-domain email.
+3. The company reviewer confirms facts and chooses what may become public.
+4. The professional publishes only approved fields and receives structured reference requests before any company reviewer is contacted again.
+
+## Local development
 
 ```bash
+npm install
+cp .env.example .env.local
+npm run db:start
+npm run db:reset
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- App: `http://localhost:3000`
+- Japanese UI: `http://localhost:3000/?lang=ja`
+- Demo: `http://localhost:3000/demo?lang=ja`
+- Health check: `http://localhost:3000/api/health`
 
-This scaffold intentionally uses system fonts so local and CI builds do not require build-time font downloads. A local font can be added later if the brand system needs one.
+After `npm run db:start`, copy Supabase local keys from `supabase status` into `.env.local`.
 
-## Learn More
+## Useful commands
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+npm run typecheck
+npm run lint
+npm test
+npm run build
+npm run beta:check-env
+npm run beta:check-env:prod
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+`beta:check-env:prod` intentionally fails when production settings still use placeholders, localhost URLs, SMTP, or example sender domains.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Private beta deployment checklist
 
-## Deploy on Vercel
+1. Create a hosted Supabase project.
+2. Apply `supabase/migrations`.
+3. Configure Supabase Auth magic-link redirect URLs to the deployed `APP_URL`.
+4. Configure production env vars:
+   - `NEXT_PUBLIC_SUPABASE_URL`
+   - `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
+   - `SUPABASE_SECRET_KEY`
+   - `APP_URL`
+   - `TOKEN_PEPPER`
+   - `OTP_PEPPER`
+   - `MAIL_TRANSPORT=resend`
+   - `RESEND_API_KEY`
+   - `MAIL_FROM`
+5. Deploy the Next.js app.
+6. Open `/api/health` and confirm `ok: true`.
+7. Run the first smoke test with a friendly company-domain reviewer email.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+See [docs/private-beta-runbook.md](docs/private-beta-runbook.md) for the full beta launch runbook.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Safety notes
+
+- Do not commit `.env*` files except `.env.example`.
+- Do not expose `SUPABASE_SECRET_KEY`, token peppers, OTP peppers, reviewer emails, OTPs, or token hashes to client code or logs.
+- The beta legal pages are lightweight operating terms for known design partners, not final counsel-reviewed public-launch terms.
+- Keep the first cohort small: 3-5 known professionals and companies.
