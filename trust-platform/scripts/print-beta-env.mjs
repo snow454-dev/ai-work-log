@@ -22,6 +22,8 @@ APP_URL=https://YOUR-DEPLOYED-APP.example.com
 TOKEN_PEPPER=${tokenPepper}
 OTP_PEPPER=${otpPepper}
 
+BETA_ALLOWED_EMAILS=founder@example.com,design-partner@example.com
+
 MAIL_TRANSPORT=resend
 RESEND_API_KEY=YOUR_RESEND_API_KEY
 MAIL_FROM=Proofboard <no-reply@YOUR-VERIFIED-DOMAIN.example>

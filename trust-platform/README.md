@@ -59,6 +59,7 @@ npm run beta:smoke -- --url https://your-deployment.example.com
    - `APP_URL`
    - `TOKEN_PEPPER`
    - `OTP_PEPPER`
+   - `BETA_ALLOWED_EMAILS`
    - `MAIL_TRANSPORT=resend`
    - `RESEND_API_KEY`
    - `MAIL_FROM`
@@ -74,3 +75,4 @@ See [docs/private-beta-runbook.md](docs/private-beta-runbook.md) for the full be
 - Do not expose `SUPABASE_SECRET_KEY`, token peppers, OTP peppers, reviewer emails, OTPs, or token hashes to client code or logs.
 - The beta legal pages are lightweight operating terms for known design partners, not final counsel-reviewed public-launch terms.
 - Keep the first cohort small: 3-5 known professionals and companies.
+- Set `BETA_ALLOWED_EMAILS` before production beta so only invited professionals can create/sign in to workspaces. Company reviewers still use secure invitation links and OTP.

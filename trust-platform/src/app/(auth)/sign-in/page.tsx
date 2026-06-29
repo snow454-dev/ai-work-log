@@ -63,6 +63,8 @@ const signInErrorMessages: Record<Locale, Record<string, string>> = {
     "Enter a valid email address.": "有効なメールアドレスを入力してください。",
     "Unable to send the sign-in email.":
       "ログインメールを送信できませんでした。",
+    "This private beta is invite-only. Ask the Proofboard team for access.":
+      "このプライベートβは招待制です。Proofboardチームへアクセスを依頼してください。",
   },
 };
 

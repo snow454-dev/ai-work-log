@@ -3,6 +3,10 @@
 import { redirect } from "next/navigation";
 import { z } from "zod";
 
+import {
+  betaAccessDeniedMessage,
+  isEmailAllowedForBeta,
+} from "@/domain/beta-access";
 import { env } from "@/lib/env";
 import { createClient } from "@/lib/supabase/server";
 
@@ -23,6 +27,15 @@ export async function signIn(
 
   if (!parsed.success) {
     return { error: "Enter a valid email address." };
+  }
+
+  if (
+    !isEmailAllowedForBeta({
+      email: parsed.data.email,
+      allowedEmails: env.BETA_ALLOWED_EMAILS,
+    })
+  ) {
+    return { error: betaAccessDeniedMessage };
   }
 
   const supabase = await createClient();

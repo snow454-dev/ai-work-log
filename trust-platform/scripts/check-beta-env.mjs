@@ -89,6 +89,17 @@ function isHttpsUrl(current) {
   }
 }
 
+function allowedEmailList() {
+  return value("BETA_ALLOWED_EMAILS")
+    .split(/[,\n]/)
+    .map((entry) => entry.trim().toLowerCase())
+    .filter(Boolean);
+}
+
+function looksLikeEmail(current) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(current);
+}
+
 const required = [
   "NEXT_PUBLIC_SUPABASE_URL",
   "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY",
@@ -184,6 +195,25 @@ if (mode === "production") {
     has("MAIL_FROM") &&
       !/example|localhost|\bYOUR[-_A-Z0-9]*\b/i.test(value("MAIL_FROM")),
     "Use a verified sender domain, e.g. Proofboard <no-reply@yourdomain.com>.",
+  );
+
+  const allowedEmails = allowedEmailList();
+  const invalidAllowedEmails = allowedEmails.filter(
+    (email) => isPlaceholder(email) || !looksLikeEmail(email),
+  );
+
+  addCheck(
+    "private beta account allowlist is configured",
+    allowedEmails.length > 0,
+    "Set BETA_ALLOWED_EMAILS to comma-separated professional account emails before beta.",
+  );
+
+  addCheck(
+    "private beta account allowlist contains valid emails",
+    allowedEmails.length > 0 && invalidAllowedEmails.length === 0,
+    invalidAllowedEmails.length
+      ? `Invalid entries: ${invalidAllowedEmails.join(", ")}`
+      : "Set BETA_ALLOWED_EMAILS to exact email addresses.",
   );
 }
 

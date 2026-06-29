@@ -26,6 +26,7 @@ Required:
 - `APP_URL`
 - `TOKEN_PEPPER`
 - `OTP_PEPPER`
+- `BETA_ALLOWED_EMAILS`
 - `MAIL_TRANSPORT`
 - `MAIL_FROM`
 
@@ -36,6 +37,7 @@ Production beta should use:
 - `APP_URL=https://...`
 - a verified sender in `MAIL_FROM`
 - unique random values for both peppers
+- `BETA_ALLOWED_EMAILS` set to exact professional account emails for the first cohort
 
 Generate peppers with:
 
@@ -68,6 +70,18 @@ npm run beta:check-env:prod
 
 5. Configure allowed site URLs and redirect URLs for the deployed domain.
 6. Keep the service role key server-only.
+
+## Professional access control
+
+Set `BETA_ALLOWED_EMAILS` before inviting users. It is a comma or newline separated list of exact professional account emails.
+
+Example:
+
+```dotenv
+BETA_ALLOWED_EMAILS=founder@example.com,design-partner@example.com
+```
+
+When this variable is set, only listed professionals can request sign-in magic links. Company reviewers are not blocked by this setting because they use scoped verification links and OTP.
 
 ## Email setup
 
