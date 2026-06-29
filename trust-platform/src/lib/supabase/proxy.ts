@@ -1,8 +1,22 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
+import { localeCookieName, localeFromValue } from "@/lib/i18n";
+
 export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({ request });
+  const requestedLocale = localeFromValue(
+    request.nextUrl.searchParams.get("lang"),
+  );
+
+  if (requestedLocale) {
+    response.cookies.set(localeCookieName, requestedLocale, {
+      maxAge: 60 * 60 * 24 * 365,
+      path: "/",
+      sameSite: "lax",
+    });
+  }
+
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabasePublishableKey =
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;

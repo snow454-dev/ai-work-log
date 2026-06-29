@@ -4,8 +4,74 @@ import { useActionState } from "react";
 
 import { saveProfile, type ProfileActionState } from "@/app/actions/profile";
 import type { ProfileRecord } from "@/data/profiles";
+import type { Locale } from "@/lib/i18n";
 
 const initialState: ProfileActionState = {};
+
+const profileFormCopy: Record<
+  Locale,
+  {
+    displayName: string;
+    profileUrl: string;
+    profileUrlHelp: string;
+    headline: string;
+    headlineHelp: string;
+    bio: string;
+    country: string;
+    countryHelp: string;
+    timeZone: string;
+    timeZoneHelp: string;
+    serviceCategories: string;
+    serviceCategoriesHelp: string;
+    saving: string;
+    save: string;
+    savingStatus: string;
+    editLater: string;
+    messages: Record<string, string>;
+  }
+> = {
+  en: {
+    displayName: "Display name",
+    profileUrl: "Profile URL",
+    profileUrlHelp: "Lowercase letters, numbers, and hyphens.",
+    headline: "Headline",
+    headlineHelp: "A short positioning line, e.g. AI automation consultant.",
+    bio: "Bio",
+    country: "Country",
+    countryHelp: "Two-letter code, e.g. JP or US.",
+    timeZone: "Time zone",
+    timeZoneHelp: "Example: Asia/Tokyo.",
+    serviceCategories: "Service categories",
+    serviceCategoriesHelp: "Comma-separated.",
+    saving: "Saving...",
+    save: "Save profile",
+    savingStatus: "Saving your profile.",
+    editLater: "You can edit this later.",
+    messages: {},
+  },
+  ja: {
+    displayName: "表示名",
+    profileUrl: "プロフィールURL",
+    profileUrlHelp: "英小文字・数字・ハイフンが使えます。",
+    headline: "肩書き・見出し",
+    headlineHelp: "例: AI業務自動化コンサルタント",
+    bio: "自己紹介",
+    country: "国",
+    countryHelp: "2文字コード。例: JP または US",
+    timeZone: "タイムゾーン",
+    timeZoneHelp: "例: Asia/Tokyo",
+    serviceCategories: "提供カテゴリ",
+    serviceCategoriesHelp: "カンマ区切りで入力してください。",
+    saving: "保存中...",
+    save: "プロフィールを保存",
+    savingStatus: "プロフィールを保存しています。",
+    editLater: "後から編集できます。",
+    messages: {
+      "Fix the highlighted fields.": "赤字の項目を修正してください。",
+      "Unable to save profile.": "プロフィールを保存できませんでした。",
+    },
+  },
+};
 
 function fieldError(
   state: ProfileActionState,
@@ -14,8 +80,17 @@ function fieldError(
   return state.errors?.[name]?.[0];
 }
 
-export function ProfileForm({ profile }: { profile: ProfileRecord | null }) {
+export function ProfileForm({
+  profile,
+  locale,
+}: {
+  profile: ProfileRecord | null;
+  locale: Locale;
+}) {
   const [state, action, pending] = useActionState(saveProfile, initialState);
+  const copy = profileFormCopy[locale];
+  const message =
+    state.message ? copy.messages[state.message] ?? state.message : undefined;
 
   const categories = profile?.serviceCategories.join(", ") ?? "";
 
@@ -24,7 +99,7 @@ export function ProfileForm({ profile }: { profile: ProfileRecord | null }) {
       <div className="grid gap-5 md:grid-cols-2">
         <Field
           id="displayName"
-          label="Display name"
+          label={copy.displayName}
           name="displayName"
           autoComplete="name"
           defaultValue={profile?.displayName}
@@ -33,22 +108,22 @@ export function ProfileForm({ profile }: { profile: ProfileRecord | null }) {
         />
         <Field
           id="slug"
-          label="Profile URL"
+          label={copy.profileUrl}
           name="slug"
           defaultValue={profile?.slug}
           error={fieldError(state, "slug")}
-          help="Lowercase letters, numbers, and hyphens."
+          help={copy.profileUrlHelp}
           required
         />
       </div>
 
       <Field
         id="headline"
-        label="Headline"
+        label={copy.headline}
         name="headline"
         defaultValue={profile?.headline}
         error={fieldError(state, "headline")}
-        help="A short positioning line, e.g. AI automation consultant."
+        help={copy.headlineHelp}
       />
 
       <div>
@@ -56,7 +131,7 @@ export function ProfileForm({ profile }: { profile: ProfileRecord | null }) {
           htmlFor="bio"
           className="block text-sm font-medium text-zinc-900"
         >
-          Bio
+          {copy.bio}
         </label>
         <textarea
           id="bio"
@@ -73,33 +148,33 @@ export function ProfileForm({ profile }: { profile: ProfileRecord | null }) {
       <div className="grid gap-5 md:grid-cols-3">
         <Field
           id="countryCode"
-          label="Country"
+          label={copy.country}
           name="countryCode"
           defaultValue={profile?.countryCode ?? undefined}
           error={fieldError(state, "countryCode")}
-          help="Two-letter code, e.g. JP or US."
+          help={copy.countryHelp}
         />
         <Field
           id="timeZone"
-          label="Time zone"
+          label={copy.timeZone}
           name="timeZone"
           defaultValue={profile?.timeZone ?? undefined}
           error={fieldError(state, "timeZone")}
-          help="Example: Asia/Tokyo."
+          help={copy.timeZoneHelp}
         />
         <Field
           id="serviceCategories"
-          label="Service categories"
+          label={copy.serviceCategories}
           name="serviceCategories"
           defaultValue={categories}
           error={fieldError(state, "serviceCategories")}
-          help="Comma-separated."
+          help={copy.serviceCategoriesHelp}
         />
       </div>
 
-      {state.message ? (
+      {message ? (
         <p className="text-sm text-red-700" aria-live="polite">
-          {state.message}
+          {message}
         </p>
       ) : null}
 
@@ -109,10 +184,10 @@ export function ProfileForm({ profile }: { profile: ProfileRecord | null }) {
           disabled={pending}
           className="rounded-full bg-zinc-950 px-5 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-zinc-800 focus:outline-none focus:ring-2 focus:ring-zinc-950 focus:ring-offset-2 disabled:cursor-not-allowed disabled:bg-zinc-400"
         >
-          {pending ? "Saving..." : "Save profile"}
+          {pending ? copy.saving : copy.save}
         </button>
         <p className="text-sm text-zinc-500" aria-live="polite">
-          {pending ? "Saving your profile." : "You can edit this later."}
+          {pending ? copy.savingStatus : copy.editLater}
         </p>
       </div>
     </form>

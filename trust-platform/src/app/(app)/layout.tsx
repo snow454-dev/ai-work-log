@@ -3,38 +3,66 @@ import { redirect } from "next/navigation";
 
 import { signOut } from "@/app/actions/auth";
 import { getCurrentUserId } from "@/data/auth";
+import { localizedHref, type Locale } from "@/lib/i18n";
+import { resolveServerLocale } from "@/lib/i18n-server";
+
+const appLayoutCopy: Record<
+  Locale,
+  {
+    nav: string;
+    addProject: string;
+    signOut: string;
+  }
+> = {
+  en: {
+    nav: "Main navigation",
+    addProject: "Add project",
+    signOut: "Sign out",
+  },
+  ja: {
+    nav: "メインナビゲーション",
+    addProject: "案件を追加",
+    signOut: "ログアウト",
+  },
+};
 
 export default async function AppLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const locale = await resolveServerLocale();
+  const copy = appLayoutCopy[locale];
+
   try {
     await getCurrentUserId();
   } catch {
-    redirect("/sign-in");
+    redirect(localizedHref("/sign-in", locale));
   }
 
   return (
     <div className="min-h-dvh bg-zinc-50 text-zinc-950">
       <header className="border-b border-zinc-200 bg-white">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-4">
-          <Link href="/dashboard" className="text-sm font-semibold">
+          <Link
+            href={localizedHref("/dashboard", locale)}
+            className="text-sm font-semibold"
+          >
             Proofboard
           </Link>
-          <nav aria-label="Main navigation" className="flex items-center gap-4">
+          <nav aria-label={copy.nav} className="flex items-center gap-4">
             <Link
-              href="/projects/new"
+              href={localizedHref("/projects/new", locale)}
               className="text-sm font-medium text-zinc-700 hover:text-zinc-950"
             >
-              Add project
+              {copy.addProject}
             </Link>
             <form action={signOut}>
               <button
                 type="submit"
                 className="text-sm font-medium text-zinc-500 hover:text-zinc-950"
               >
-                Sign out
+                {copy.signOut}
               </button>
             </form>
           </nav>
