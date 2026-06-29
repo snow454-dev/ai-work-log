@@ -1,16 +1,46 @@
 import Link from "next/link";
 
-export function LightLegalFooter() {
+import { localizedHref, type Locale } from "@/lib/i18n";
+
+const footerCopy: Record<
+  Locale,
+  {
+    notice: string;
+    privacy: string;
+    terms: string;
+  }
+> = {
+  en: {
+    notice: "© 2026 Proofboard. Private beta.",
+    privacy: "Privacy",
+    terms: "Terms",
+  },
+  ja: {
+    notice: "© 2026 Proofboard. プライベートβ版。",
+    privacy: "プライバシー",
+    terms: "利用規約",
+  },
+};
+
+export function LightLegalFooter({ locale = "en" }: { locale?: Locale }) {
+  const copy = footerCopy[locale];
+
   return (
     <footer className="mt-10 border-t border-zinc-200 py-6 text-sm text-zinc-500">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <p>© 2026 Proofboard. Private beta.</p>
+        <p>{copy.notice}</p>
         <nav aria-label="Legal" className="flex gap-4">
-          <Link href="/legal/privacy" className="hover:text-zinc-950">
-            Privacy
+          <Link
+            href={localizedHref("/legal/privacy", locale)}
+            className="hover:text-zinc-950"
+          >
+            {copy.privacy}
           </Link>
-          <Link href="/legal/terms" className="hover:text-zinc-950">
-            Terms
+          <Link
+            href={localizedHref("/legal/terms", locale)}
+            className="hover:text-zinc-950"
+          >
+            {copy.terms}
           </Link>
         </nav>
       </div>
@@ -18,17 +48,25 @@ export function LightLegalFooter() {
   );
 }
 
-export function DarkLegalFooter() {
+export function DarkLegalFooter({ locale = "en" }: { locale?: Locale }) {
+  const copy = footerCopy[locale];
+
   return (
     <footer className="border-t border-white/10 py-6 text-sm text-zinc-400">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <p>© 2026 Proofboard. Private beta.</p>
+        <p>{copy.notice}</p>
         <nav aria-label="Legal" className="flex gap-4">
-          <Link href="/legal/privacy" className="hover:text-white">
-            Privacy
+          <Link
+            href={localizedHref("/legal/privacy", locale)}
+            className="hover:text-white"
+          >
+            {copy.privacy}
           </Link>
-          <Link href="/legal/terms" className="hover:text-white">
-            Terms
+          <Link
+            href={localizedHref("/legal/terms", locale)}
+            className="hover:text-white"
+          >
+            {copy.terms}
           </Link>
         </nav>
       </div>

@@ -7,8 +7,73 @@ import {
   submitReferenceRequest,
   type ReferenceRequestActionState,
 } from "@/app/actions/reference-requests";
+import { localizedHref, type Locale } from "@/lib/i18n";
 
 const initialState: ReferenceRequestActionState = {};
+
+const referenceRequestFormCopy: Record<
+  Locale,
+  {
+    name: string;
+    email: string;
+    company: string;
+    role: string;
+    reason: string;
+    reasonHelp: string;
+    message: string;
+    messageHelp: string;
+    consent: string;
+    helpPrefix: string;
+    privacy: string;
+    terms: string;
+    helpSuffix: string;
+    submitting: string;
+    submit: string;
+  }
+> = {
+  en: {
+    name: "Your name",
+    email: "Work email",
+    company: "Company",
+    role: "Role",
+    reason: "Why are you requesting this reference?",
+    reasonHelp:
+      "Briefly describe the project, role, or buying decision this reference would support.",
+    message: "Optional message",
+    messageHelp:
+      "Add anything the professional should know before deciding whether to route this request.",
+    consent:
+      "I understand this request is shared with the professional first. Reviewer contact details are not exposed or contacted directly by this form.",
+    helpPrefix:
+      "Proofboard stores this request so the professional can review the next step. Beta use is subject to the",
+    privacy: "Privacy Notice",
+    terms: "Terms",
+    helpSuffix: ".",
+    submitting: "Submitting...",
+    submit: "Submit reference request",
+  },
+  ja: {
+    name: "お名前",
+    email: "仕事用メール",
+    company: "会社名",
+    role: "役職",
+    reason: "紹介を依頼する理由",
+    reasonHelp:
+      "この紹介が支援するプロジェクト、役割、または検討中の意思決定を簡潔に記入してください。",
+    message: "任意メッセージ",
+    messageHelp:
+      "本人がこの依頼を紹介ルートに進めるべきか判断するために必要な補足があれば記入してください。",
+    consent:
+      "この依頼はまず本人に共有され、確認担当者の連絡先はこのフォームで公開・直接連絡されないことを理解しています。",
+    helpPrefix:
+      "Proofboardは、本人が次のステップを確認できるようこの依頼を保存します。β利用には",
+    privacy: "プライバシー通知",
+    terms: "利用規約",
+    helpSuffix: "が適用されます。",
+    submitting: "送信中...",
+    submit: "紹介依頼を送信",
+  },
+};
 
 function fieldError(
   state: ReferenceRequestActionState,
@@ -20,12 +85,15 @@ function fieldError(
 export function ReferenceRequestForm({
   slug,
   evidenceId,
+  locale = "en",
 }: {
   slug: string;
   evidenceId: string;
+  locale?: Locale;
 }) {
   const action = submitReferenceRequest.bind(null, slug, evidenceId);
   const [state, formAction, pending] = useActionState(action, initialState);
+  const copy = referenceRequestFormCopy[locale];
 
   return (
     <form action={formAction} className="space-y-6" aria-busy={pending}>
@@ -33,7 +101,7 @@ export function ReferenceRequestForm({
         <Field
           id="requesterName"
           name="requesterName"
-          label="Your name"
+          label={copy.name}
           autoComplete="name"
           error={fieldError(state, "requesterName")}
           required
@@ -41,7 +109,7 @@ export function ReferenceRequestForm({
         <Field
           id="requesterEmail"
           name="requesterEmail"
-          label="Work email"
+          label={copy.email}
           type="email"
           autoComplete="email"
           error={fieldError(state, "requesterEmail")}
@@ -53,7 +121,7 @@ export function ReferenceRequestForm({
         <Field
           id="requesterCompany"
           name="requesterCompany"
-          label="Company"
+          label={copy.company}
           autoComplete="organization"
           error={fieldError(state, "requesterCompany")}
           required
@@ -61,7 +129,7 @@ export function ReferenceRequestForm({
         <Field
           id="requesterRole"
           name="requesterRole"
-          label="Role"
+          label={copy.role}
           autoComplete="organization-title"
           error={fieldError(state, "requesterRole")}
         />
@@ -70,8 +138,8 @@ export function ReferenceRequestForm({
       <TextArea
         id="opportunityContext"
         name="opportunityContext"
-        label="Why are you requesting this reference?"
-        help="Briefly describe the project, role, or buying decision this reference would support."
+        label={copy.reason}
+        help={copy.reasonHelp}
         error={fieldError(state, "opportunityContext")}
         required
       />
@@ -79,8 +147,8 @@ export function ReferenceRequestForm({
       <TextArea
         id="message"
         name="message"
-        label="Optional message"
-        help="Add anything the professional should know before deciding whether to route this request."
+        label={copy.message}
+        help={copy.messageHelp}
         error={fieldError(state, "message")}
       />
 
@@ -100,21 +168,24 @@ export function ReferenceRequestForm({
           />
           <div className="text-sm text-zinc-700">
             <label htmlFor="consentConfirmed">
-              I understand this request is shared with the professional first.
-              Reviewer contact details are not exposed or contacted directly by
-              this form.
+              {copy.consent}
             </label>
             <p id="consentConfirmed-help" className="mt-2 text-xs text-zinc-500">
-              Proofboard stores this request so the professional can review the
-              next step. Beta use is subject to the{" "}
-              <Link href="/legal/privacy" className="underline">
-                Privacy Notice
+              {copy.helpPrefix}{" "}
+              <Link
+                href={localizedHref("/legal/privacy", locale)}
+                className="underline"
+              >
+                {copy.privacy}
               </Link>{" "}
-              and{" "}
-              <Link href="/legal/terms" className="underline">
-                Terms
+              {locale === "ja" ? "および" : "and"}{" "}
+              <Link
+                href={localizedHref("/legal/terms", locale)}
+                className="underline"
+              >
+                {copy.terms}
               </Link>
-              .
+              {copy.helpSuffix}
             </p>
           </div>
         </div>
@@ -135,7 +206,7 @@ export function ReferenceRequestForm({
         disabled={pending}
         className="rounded-full bg-zinc-950 px-5 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-zinc-800 focus:outline-none focus:ring-2 focus:ring-zinc-950 focus:ring-offset-2 disabled:cursor-not-allowed disabled:bg-zinc-400"
       >
-        {pending ? "Submitting..." : "Submit reference request"}
+        {pending ? copy.submitting : copy.submit}
       </button>
     </form>
   );
