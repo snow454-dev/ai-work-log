@@ -71,7 +71,7 @@ Required smoke checks:
 - Professional sign-in magic link is delivered.
 - Company verification invitation is delivered.
 - Company OTP email is delivered.
-- Verification receipt email is delivered.
+- Verification receipt email is delivered and its receipt link opens without exposing private project details.
 
 Do not invite external company reviewers while `MAIL_TRANSPORT=smtp` or `MAIL_FROM` uses an example domain.
 
@@ -86,9 +86,10 @@ After deployment:
 5. Create one completed project using a friendly company-domain reviewer email.
 6. Send the verification request.
 7. Ask the reviewer to open the invitation link, request OTP, and submit the review.
-8. Publish the approved proof.
-9. Submit a structured reference request from the public profile.
-10. Confirm the owner dashboard shows the request and accept/decline works.
+8. Open the verification receipt link from the reviewer receipt email.
+9. Publish the approved proof.
+10. Submit a structured reference request from the public profile.
+11. Confirm the owner dashboard shows the request and accept/decline works.
 
 ## First cohort recommendation
 
