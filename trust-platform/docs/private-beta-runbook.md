@@ -7,6 +7,7 @@ This runbook is for the first controlled beta with known professionals and known
 - GitHub Actions is green on the release branch.
 - `npm run typecheck`, `npm run lint`, `npm test`, and `npm run build` pass locally or in CI.
 - `npm run beta:check-env:prod` passes in the deployment environment.
+- `npm run beta:smoke -- --url https://YOUR-DEPLOYED-APP` passes after deployment.
 - Hosted Supabase migrations are applied.
 - Supabase Auth redirect URLs include the deployed `APP_URL`.
 - Transactional email is configured with a verified sender domain.
@@ -40,6 +41,12 @@ Generate peppers with:
 
 ```bash
 openssl rand -base64 48
+```
+
+Or print a complete production-beta env template with fresh random peppers:
+
+```bash
+npm run beta:print-env
 ```
 
 Run:
@@ -79,17 +86,21 @@ Do not invite external company reviewers while `MAIL_TRANSPORT=smtp` or `MAIL_FR
 
 After deployment:
 
-1. Open `/api/health` and confirm `ok: true`.
-2. Open `/?lang=ja` and confirm the Japanese landing page renders.
-3. Sign in as a professional.
-4. Create or update a profile.
-5. Create one completed project using a friendly company-domain reviewer email.
-6. Send the verification request.
-7. Ask the reviewer to open the invitation link, request OTP, and submit the review.
-8. Open the verification receipt link from the reviewer receipt email.
-9. Publish the approved proof.
-10. Submit a structured reference request from the public profile.
-11. Confirm the owner dashboard shows the request and accept/decline works.
+1. Run:
+
+   ```bash
+   npm run beta:smoke -- --url https://YOUR-DEPLOYED-APP
+   ```
+
+2. Sign in as a professional.
+3. Create or update a profile.
+4. Create one completed project using a friendly company-domain reviewer email.
+5. Send the verification request.
+6. Ask the reviewer to open the invitation link, request OTP, and submit the review.
+7. Open the verification receipt link from the reviewer receipt email.
+8. Publish the approved proof.
+9. Submit a structured reference request from the public profile.
+10. Confirm the owner dashboard shows the request and accept/decline works.
 
 ## First cohort recommendation
 

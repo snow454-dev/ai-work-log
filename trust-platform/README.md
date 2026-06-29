@@ -35,11 +35,17 @@ npm run typecheck
 npm run lint
 npm test
 npm run build
+npm run beta:print-env
 npm run beta:check-env
 npm run beta:check-env:prod
+npm run beta:smoke -- --url https://your-deployment.example.com
 ```
 
+`beta:print-env` prints a production-beta environment template with fresh random peppers. Paste the values into the deployment provider's encrypted environment-variable settings; do not commit real values.
+
 `beta:check-env:prod` intentionally fails when production settings still use placeholders, localhost URLs, SMTP, or example sender domains.
+
+`beta:smoke` checks a deployed URL after environment variables and migrations are configured.
 
 ## Private beta deployment checklist
 
@@ -57,8 +63,8 @@ npm run beta:check-env:prod
    - `RESEND_API_KEY`
    - `MAIL_FROM`
 5. Deploy the Next.js app.
-6. Open `/api/health` and confirm `ok: true`.
-7. Run the first smoke test with a friendly company-domain reviewer email.
+6. Run `npm run beta:smoke -- --url https://YOUR-DEPLOYED-APP`.
+7. Run the first real smoke test with a friendly company-domain reviewer email.
 
 See [docs/private-beta-runbook.md](docs/private-beta-runbook.md) for the full beta launch runbook.
 

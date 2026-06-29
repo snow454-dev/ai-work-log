@@ -72,9 +72,7 @@ function has(name) {
 }
 
 function isPlaceholder(current) {
-  return /replace-with|changeme|example\.test|sb_(publishable|secret)_test/i.test(
-    current,
-  );
+  return /replace-with|changeme|\bYOUR[-_A-Z0-9]*\b|example(\.|>|$)|sb_(publishable|secret)_test/i.test(current);
 }
 
 function isLocalUrl(current) {
@@ -183,7 +181,8 @@ if (mode === "production") {
 
   addCheck(
     "MAIL_FROM is production-ready",
-    has("MAIL_FROM") && !/example\.test|localhost/i.test(value("MAIL_FROM")),
+    has("MAIL_FROM") &&
+      !/example|localhost|\bYOUR[-_A-Z0-9]*\b/i.test(value("MAIL_FROM")),
     "Use a verified sender domain, e.g. Proofboard <no-reply@yourdomain.com>.",
   );
 }
