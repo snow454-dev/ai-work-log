@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { ReferenceRequestForm } from "@/components/reference-request-form";
+import { LightLegalFooter } from "@/components/legal-footer";
 import { getPublicProfileBySlug } from "@/data/public-profile";
 
 export default async function ReferenceRequestPage({
@@ -112,6 +113,8 @@ export default async function ReferenceRequestPage({
             </section>
           </section>
         )}
+
+        <LightLegalFooter />
       </div>
     </main>
   );

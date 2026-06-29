@@ -1,5 +1,7 @@
 import Link from "next/link";
 
+import { DarkLegalFooter } from "@/components/legal-footer";
+
 export default function Home() {
   return (
     <main className="min-h-dvh bg-zinc-950 text-white">
@@ -75,6 +77,8 @@ export default function Home() {
             </div>
           </div>
         </section>
+
+        <DarkLegalFooter />
       </div>
     </main>
   );

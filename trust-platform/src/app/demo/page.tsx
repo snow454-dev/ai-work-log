@@ -1,5 +1,7 @@
 import Link from "next/link";
 
+import { LightLegalFooter } from "@/components/legal-footer";
+
 export default function DemoPage() {
   return (
     <main className="min-h-dvh bg-zinc-50 text-zinc-950">
@@ -155,7 +157,16 @@ export default function DemoPage() {
                 />
                 <span>
                   I understand this request is shared with the professional
-                  first. Reviewer contact details are not exposed.
+                  first. Reviewer contact details are not exposed. Beta use is
+                  subject to the{" "}
+                  <Link href="/legal/privacy" className="underline">
+                    Privacy Notice
+                  </Link>{" "}
+                  and{" "}
+                  <Link href="/legal/terms" className="underline">
+                    Terms
+                  </Link>
+                  .
                 </span>
               </label>
               <button
@@ -167,6 +178,8 @@ export default function DemoPage() {
             </form>
           </section>
         </section>
+
+        <LightLegalFooter />
       </div>
     </main>
   );

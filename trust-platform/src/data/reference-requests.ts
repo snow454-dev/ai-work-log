@@ -23,6 +23,11 @@ const referenceRequestRowSchema = z.object({
   created_at: z.string(),
 });
 
+const referenceRequestStatusResultSchema = z.object({
+  reference_request_id: z.uuid(),
+  status: z.enum(["accepted", "declined"]),
+});
+
 export type CreatedReferenceRequest = {
   id: string;
 };
@@ -40,6 +45,8 @@ export type ReferenceRequestListItem = {
   status: "pending" | "accepted" | "declined" | "expired";
   createdAt: string;
 };
+
+export type ReferenceRequestDecision = "accepted" | "declined";
 
 export async function createReferenceRequest({
   slug,
@@ -103,4 +110,33 @@ export async function listReferenceRequestsForOwner(): Promise<
       status: row.status,
       createdAt: row.created_at,
     }));
+}
+
+export async function updateReferenceRequestStatus({
+  requestId,
+  status,
+}: {
+  requestId: string;
+  status: ReferenceRequestDecision;
+}): Promise<ReferenceRequestDecision> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc(
+    "update_reference_request_status",
+    {
+      p_reference_request_id: requestId,
+      p_status: status,
+    },
+  );
+
+  if (error) {
+    throw new Error("Unable to update reference request.");
+  }
+
+  const [result] = z.array(referenceRequestStatusResultSchema).parse(data);
+
+  if (!result) {
+    throw new Error("Unable to update reference request.");
+  }
+
+  return result.status;
 }

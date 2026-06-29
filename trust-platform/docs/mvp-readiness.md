@@ -4,7 +4,7 @@
 
 The MVP is ready for local product review, founder demos, and trusted design-partner walkthroughs.
 
-It is not ready for open public launch until deployment, production email, privacy/legal copy, and abuse controls are configured.
+It is not ready for open public launch until deployment, production email, legal review, and operational monitoring are configured.
 
 ## Local real-data smoke test
 
@@ -44,6 +44,9 @@ It is not ready for open public launch until deployment, production email, priva
 - Safe reference availability indicator
 - Structured reference request capture
 - Owner dashboard reference-request inbox
+- Owner accept/decline workflow for reference requests
+- Basic DB-level public-form rate limiting
+- Beta privacy notice, terms, and consent links
 - Local demo page and seeded public proof data
 
 ## Before a private beta
@@ -51,13 +54,12 @@ It is not ready for open public launch until deployment, production email, priva
 - Deploy Supabase migrations to a real project
 - Configure production env vars and email transport
 - Run DB tests against a working local or staging Supabase instance
-- Add privacy policy, terms, and consent copy
-- Add basic rate limiting or abuse protection for public reference forms
-- Add owner workflow for accepting or declining reference requests
+- Review beta privacy notice and terms for the first design partners
+- Invite only known users and companies for the first cohort
 
 ## Rough remaining effort
 
 - Founder demo / clickable prototype: done
 - Local real-data smoke test: less than 1 day after local Supabase is available
-- Private beta with 3-5 known users: 2-4 focused workdays
+- Private beta with 3-5 known users: 1-2 focused workdays after deployment credentials are ready
 - Public launch candidate: 1-2 weeks, mostly deployment, legal, security, and operational hardening

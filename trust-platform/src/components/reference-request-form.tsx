@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useActionState } from "react";
 
 import {
@@ -84,8 +85,9 @@ export function ReferenceRequestForm({
       />
 
       <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-4">
-        <label className="flex gap-3 text-sm text-zinc-700">
+        <div className="flex gap-3">
           <input
+            id="consentConfirmed"
             type="checkbox"
             name="consentConfirmed"
             aria-invalid={Boolean(fieldError(state, "consentConfirmed"))}
@@ -96,16 +98,26 @@ export function ReferenceRequestForm({
             }
             className="mt-0.5 size-4 rounded border-zinc-300 text-zinc-950"
           />
-          <span>
-            I understand this request is shared with the professional first.
-            Reviewer contact details are not exposed or contacted directly by
-            this form.
-          </span>
-        </label>
-        <p id="consentConfirmed-help" className="mt-2 text-xs text-zinc-500">
-          Proofboard stores this request so the professional can review the next
-          step.
-        </p>
+          <div className="text-sm text-zinc-700">
+            <label htmlFor="consentConfirmed">
+              I understand this request is shared with the professional first.
+              Reviewer contact details are not exposed or contacted directly by
+              this form.
+            </label>
+            <p id="consentConfirmed-help" className="mt-2 text-xs text-zinc-500">
+              Proofboard stores this request so the professional can review the
+              next step. Beta use is subject to the{" "}
+              <Link href="/legal/privacy" className="underline">
+                Privacy Notice
+              </Link>{" "}
+              and{" "}
+              <Link href="/legal/terms" className="underline">
+                Terms
+              </Link>
+              .
+            </p>
+          </div>
+        </div>
         <FieldMessage
           id="consentConfirmed-error"
           message={fieldError(state, "consentConfirmed")}

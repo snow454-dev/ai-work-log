@@ -5,6 +5,7 @@ import {
   getPublicProfileBySlug,
   type PublicEvidenceRecord,
 } from "@/data/public-profile";
+import { LightLegalFooter } from "@/components/legal-footer";
 import type {
   AcquisitionSource,
   RehireResponse,
@@ -147,6 +148,8 @@ export default async function PublicProfilePage({
             </ul>
           )}
         </section>
+
+        <LightLegalFooter />
       </div>
     </main>
   );

@@ -1,5 +1,9 @@
 import Link from "next/link";
 
+import {
+  acceptReferenceRequest,
+  declineReferenceRequest,
+} from "@/app/actions/reference-request-decisions";
 import { getCurrentUserId } from "@/data/auth";
 import { listProjectsForUser, type ProjectListItem } from "@/data/projects";
 import { getProfileForUser } from "@/data/profiles";
@@ -213,6 +217,26 @@ function ReferenceRequestRow({
             <p className="mt-1 text-sm text-zinc-500">
               {request.requesterRole}
             </p>
+          ) : null}
+          {request.status === "pending" ? (
+            <div className="mt-4 flex flex-col gap-2 sm:flex-row md:justify-end">
+              <form action={acceptReferenceRequest.bind(null, request.id)}>
+                <button
+                  type="submit"
+                  className="w-full rounded-full bg-zinc-950 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800 focus:outline-none focus:ring-2 focus:ring-zinc-950 focus:ring-offset-2 sm:w-auto"
+                >
+                  Accept
+                </button>
+              </form>
+              <form action={declineReferenceRequest.bind(null, request.id)}>
+                <button
+                  type="submit"
+                  className="w-full rounded-full border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50 focus:outline-none focus:ring-2 focus:ring-zinc-950 focus:ring-offset-2 sm:w-auto"
+                >
+                  Decline
+                </button>
+              </form>
+            </div>
           ) : null}
         </div>
       </div>
