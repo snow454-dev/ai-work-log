@@ -6,6 +6,7 @@ import process from "node:process";
 function usage() {
   console.log(`Usage:
   npm run beta:release-check
+  npm run beta:release-check -- --env-file .env.production.local
   npm run beta:release-check -- --url https://your-deployed-app.example.com
 
 Runs the private-beta release checks in order:
@@ -86,16 +87,20 @@ if (process.argv.includes("--help") || process.argv.includes("-h")) {
 
 const rawSmokeUrl = optionValue("--url");
 const smokeUrl = normalizeUrl(rawSmokeUrl);
+const envFile = optionValue("--env-file");
 
 if (rawSmokeUrl && !smokeUrl) {
   console.error(`Invalid --url value: ${rawSmokeUrl}`);
   process.exit(1);
 }
 
+const environmentArgs = envFile ? ["--", "--env-file", envFile] : [];
+
 const steps = [
   {
     name: "Production beta environment",
     script: "beta:check-env:prod",
+    args: environmentArgs,
   },
   {
     name: "TypeScript typecheck",

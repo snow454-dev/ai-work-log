@@ -65,6 +65,12 @@ Or run the full pre-deployment release gate:
 npm run beta:release-check
 ```
 
+If you keep production-beta values in a local file before copying them into Vercel, validate that file directly:
+
+```bash
+npm run beta:release-check -- --env-file .env.production.local
+```
+
 ## Supabase setup
 
 1. Create a hosted Supabase project.

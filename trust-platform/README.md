@@ -38,7 +38,9 @@ npm run build
 npm run beta:print-env
 npm run beta:check-env
 npm run beta:check-env:prod
+npm run beta:check-env:prod -- --env-file .env.production.local
 npm run beta:release-check
+npm run beta:release-check -- --env-file .env.production.local
 npm run beta:smoke -- --url https://your-deployment.example.com
 ```
 
@@ -49,6 +51,8 @@ npm run beta:smoke -- --url https://your-deployment.example.com
 `beta:smoke` checks a deployed URL after environment variables and migrations are configured.
 
 `beta:release-check` runs the release gate in order: production env validation, typecheck, lint, unit tests, production build, and an optional deployed smoke test when you pass `-- --url https://...`.
+
+Use `-- --env-file .env.production.local` to validate a local production-beta env file before copying values into Vercel.
 
 After deployment, you can also run the manual GitHub Actions workflow `Trust Platform Beta Smoke` with the deployed URL. It runs the same deployed smoke checks from CI.
 

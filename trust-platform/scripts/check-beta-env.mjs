@@ -7,6 +7,16 @@ import process from "node:process";
 const mode = process.argv.includes("--production") ? "production" : "local";
 const root = process.cwd();
 
+function optionValue(name) {
+  const index = process.argv.indexOf(name);
+
+  if (index === -1) {
+    return undefined;
+  }
+
+  return process.argv[index + 1];
+}
+
 function parseDotEnv(source) {
   const values = {};
 
@@ -49,9 +59,27 @@ function loadEnvFile(name) {
   return parseDotEnv(readFileSync(filePath, "utf8"));
 }
 
+function loadExplicitEnvFile(name) {
+  if (!name) {
+    return {};
+  }
+
+  const filePath = path.isAbsolute(name) ? name : path.join(root, name);
+
+  if (!existsSync(filePath)) {
+    console.error(`Env file not found: ${name}`);
+    process.exit(1);
+  }
+
+  return parseDotEnv(readFileSync(filePath, "utf8"));
+}
+
+const explicitEnvFile = optionValue("--env-file");
+
 const env = {
   ...loadEnvFile(".env"),
   ...loadEnvFile(".env.local"),
+  ...loadExplicitEnvFile(explicitEnvFile),
   ...process.env,
 };
 
@@ -217,7 +245,11 @@ if (mode === "production") {
   );
 }
 
-console.log(`Proofboard beta environment check (${mode})`);
+console.log(
+  `Proofboard beta environment check (${mode})${
+    explicitEnvFile ? ` using ${explicitEnvFile}` : ""
+  }`,
+);
 
 for (const check of checks) {
   const mark = check.ok ? "✓" : "✗";
