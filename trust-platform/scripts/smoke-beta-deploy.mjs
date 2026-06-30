@@ -89,6 +89,39 @@ const checks = [
         : "Expected Japanese sign-in content";
     },
   },
+  {
+    name: "Japanese AI solutions buyer page renders",
+    path: "/ai-solutions?lang=ja",
+    validate: async (response) => {
+      if (!response.ok) {
+        return `Expected HTTP 200, got ${response.status}`;
+      }
+
+      const body = await response.text();
+
+      return body.includes("AI開発者側の価値") &&
+        body.includes("セキュリティ上、β利用で問題ない")
+        ? undefined
+        : "Expected Japanese AI solutions buyer content";
+    },
+  },
+  {
+    name: "Japanese beta access request page renders",
+    path: "/beta-access?intent=company&lang=ja",
+    validate: async (response) => {
+      if (!response.ok) {
+        return `Expected HTTP 200, got ${response.status}`;
+      }
+
+      const body = await response.text();
+
+      return body.includes("Proofboardのβアクセスを申請する") &&
+        body.includes("プライベートβアクセスを申請") &&
+        body.includes("企業側として使う")
+        ? undefined
+        : "Expected Japanese beta access request content";
+    },
+  },
 ];
 
 console.log(`Proofboard private beta smoke test: ${baseUrl}`);

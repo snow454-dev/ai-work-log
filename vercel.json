@@ -1,0 +1,7 @@
+{
+  "framework": "nextjs",
+  "installCommand": "cd trust-platform && npm ci",
+  "buildCommand": "cd trust-platform && npm run build",
+  "devCommand": "cd trust-platform && npm run dev",
+  "outputDirectory": "trust-platform/.next"
+}

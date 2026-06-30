@@ -97,6 +97,8 @@ Create one Vercel project for the beta app:
 
 These commands are also pinned in `vercel.json` so the deployment does not accidentally build another app in the repository.
 
+There is also a repository-root `vercel.json` fallback. It points install, build, dev, and output settings at `trust-platform` in case the Vercel project is accidentally created with the repository root as its Root Directory. Prefer setting Root Directory to `trust-platform` in Vercel, but keep the fallback so preview deployments do not build the old root app.
+
 ## Professional access control
 
 Set `BETA_ALLOWED_EMAILS` before inviting users. It is a comma or newline separated list of exact professional account emails.

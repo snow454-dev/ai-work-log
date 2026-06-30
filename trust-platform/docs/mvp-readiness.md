@@ -48,6 +48,8 @@ It is close to a controlled private beta, but it is not ready for open public la
 - Owner accept/decline workflow for reference requests
 - Basic DB-level public-form rate limiting
 - Beta privacy notice, terms, and consent links
+- AI developer/company buyer landing page for purchase-intent review
+- Private beta access request intake for AI developers and company buyers
 - Japanese support across the public UI, workspace, and company review flow
 - Runtime health endpoint for deployment smoke checks
 - Environment checker for local and production beta settings
@@ -59,6 +61,7 @@ It is close to a controlled private beta, but it is not ready for open public la
 - Configure production env vars and email transport
 - Run `npm run beta:check-env:prod` in the deployment environment
 - Confirm `/api/health` returns `ok: true`
+- Confirm `/beta-access?intent=company&lang=ja` captures a design-partner request after hosted migrations are applied
 - Run DB tests against a working local or staging Supabase instance
 - Review beta privacy notice and terms for the first design partners
 - Invite only known users and companies for the first cohort
