@@ -1,0 +1,38 @@
+name: Trust Platform Beta Smoke
+
+on:
+  workflow_dispatch:
+    inputs:
+      url:
+        description: "Deployed Proofboard URL to smoke test"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    name: Deployed beta smoke test
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: trust-platform
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: trust-platform/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Smoke test deployed beta
+        run: npm run beta:smoke -- --url "$BETA_SMOKE_URL"
+        env:
+          BETA_SMOKE_URL: ${{ inputs.url }}

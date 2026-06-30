@@ -50,6 +50,8 @@ npm run beta:smoke -- --url https://your-deployment.example.com
 
 `beta:release-check` runs the release gate in order: production env validation, typecheck, lint, unit tests, production build, and an optional deployed smoke test when you pass `-- --url https://...`.
 
+After deployment, you can also run the manual GitHub Actions workflow `Trust Platform Beta Smoke` with the deployed URL. It runs the same deployed smoke checks from CI.
+
 ## Private beta deployment checklist
 
 1. Create a hosted Supabase project.
@@ -69,7 +71,7 @@ npm run beta:smoke -- --url https://your-deployment.example.com
    - `MAIL_FROM`
 6. Run `npm run beta:release-check`.
 7. Deploy the Next.js app. `trust-platform/vercel.json` pins the minimal Next.js build settings.
-8. Run `npm run beta:release-check -- --url https://YOUR-DEPLOYED-APP`.
+8. Run `npm run beta:release-check -- --url https://YOUR-DEPLOYED-APP`, or trigger the `Trust Platform Beta Smoke` GitHub Actions workflow with the deployed URL.
 9. Run the first real smoke test with a friendly company-domain reviewer email.
 
 See [docs/private-beta-runbook.md](docs/private-beta-runbook.md) for the full beta launch runbook.

@@ -5,6 +5,7 @@ on:
     paths:
       - "trust-platform/**"
       - ".github/workflows/trust-platform-ci.yml"
+      - ".github/workflows/trust-platform-beta-smoke.yml"
   push:
     branches:
       - main
@@ -12,6 +13,7 @@ on:
     paths:
       - "trust-platform/**"
       - ".github/workflows/trust-platform-ci.yml"
+      - ".github/workflows/trust-platform-beta-smoke.yml"
 
 jobs:
   web:

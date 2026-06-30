@@ -9,6 +9,7 @@ This runbook is for the first controlled beta with known professionals and known
 - `npm run beta:release-check` passes before deployment.
 - `npm run beta:check-env:prod` passes in the deployment environment.
 - `npm run beta:release-check -- --url https://YOUR-DEPLOYED-APP` passes after deployment.
+- The manual GitHub Actions workflow `Trust Platform Beta Smoke` passes for the deployed URL, if you prefer CI-hosted smoke checks.
 - Hosted Supabase migrations are applied.
 - Supabase Auth redirect URLs include the deployed `APP_URL`.
 - Transactional email is configured with a verified sender domain.
@@ -121,11 +122,13 @@ Do not invite external company reviewers while `MAIL_TRANSPORT=smtp` or `MAIL_FR
 
 After deployment:
 
-1. Run:
+1. Run the local release gate against the deployed URL:
 
    ```bash
    npm run beta:release-check -- --url https://YOUR-DEPLOYED-APP
    ```
+
+   Alternatively, open GitHub Actions, run `Trust Platform Beta Smoke`, and enter the deployed app URL.
 
 2. Sign in as a professional.
 3. Create or update a profile.
