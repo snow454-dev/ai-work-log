@@ -38,6 +38,7 @@ npm run build
 npm run beta:print-env
 npm run beta:check-env
 npm run beta:check-env:prod
+npm run beta:release-check
 npm run beta:smoke -- --url https://your-deployment.example.com
 ```
 
@@ -46,6 +47,8 @@ npm run beta:smoke -- --url https://your-deployment.example.com
 `beta:check-env:prod` intentionally fails when production settings still use placeholders, localhost URLs, SMTP, or example sender domains.
 
 `beta:smoke` checks a deployed URL after environment variables and migrations are configured.
+
+`beta:release-check` runs the release gate in order: production env validation, typecheck, lint, unit tests, production build, and an optional deployed smoke test when you pass `-- --url https://...`.
 
 ## Private beta deployment checklist
 
@@ -64,9 +67,10 @@ npm run beta:smoke -- --url https://your-deployment.example.com
    - `MAIL_TRANSPORT=resend`
    - `RESEND_API_KEY`
    - `MAIL_FROM`
-6. Deploy the Next.js app. `trust-platform/vercel.json` pins the minimal Next.js build settings.
-7. Run `npm run beta:smoke -- --url https://YOUR-DEPLOYED-APP`.
-8. Run the first real smoke test with a friendly company-domain reviewer email.
+6. Run `npm run beta:release-check`.
+7. Deploy the Next.js app. `trust-platform/vercel.json` pins the minimal Next.js build settings.
+8. Run `npm run beta:release-check -- --url https://YOUR-DEPLOYED-APP`.
+9. Run the first real smoke test with a friendly company-domain reviewer email.
 
 See [docs/private-beta-runbook.md](docs/private-beta-runbook.md) for the full beta launch runbook.
 

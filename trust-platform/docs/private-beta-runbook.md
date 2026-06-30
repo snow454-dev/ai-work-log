@@ -6,8 +6,9 @@ This runbook is for the first controlled beta with known professionals and known
 
 - GitHub Actions is green on the release branch.
 - `npm run typecheck`, `npm run lint`, `npm test`, and `npm run build` pass locally or in CI.
+- `npm run beta:release-check` passes before deployment.
 - `npm run beta:check-env:prod` passes in the deployment environment.
-- `npm run beta:smoke -- --url https://YOUR-DEPLOYED-APP` passes after deployment.
+- `npm run beta:release-check -- --url https://YOUR-DEPLOYED-APP` passes after deployment.
 - Hosted Supabase migrations are applied.
 - Supabase Auth redirect URLs include the deployed `APP_URL`.
 - Transactional email is configured with a verified sender domain.
@@ -55,6 +56,12 @@ Run:
 
 ```bash
 npm run beta:check-env:prod
+```
+
+Or run the full pre-deployment release gate:
+
+```bash
+npm run beta:release-check
 ```
 
 ## Supabase setup
@@ -117,7 +124,7 @@ After deployment:
 1. Run:
 
    ```bash
-   npm run beta:smoke -- --url https://YOUR-DEPLOYED-APP
+   npm run beta:release-check -- --url https://YOUR-DEPLOYED-APP
    ```
 
 2. Sign in as a professional.

@@ -15,6 +15,7 @@
     "beta:check-env": "node scripts/check-beta-env.mjs",
     "beta:check-env:prod": "node scripts/check-beta-env.mjs --production",
     "beta:smoke": "node scripts/smoke-beta-deploy.mjs",
+    "beta:release-check": "node scripts/release-check.mjs",
     "db:start": "supabase start",
     "db:stop": "supabase stop",
     "db:reset": "supabase db reset",

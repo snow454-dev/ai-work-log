@@ -14,6 +14,7 @@ function setCompleteEnv(overrides: Record<string, string | undefined> = {}) {
   process.env.MAIL_TRANSPORT = "resend";
   process.env.RESEND_API_KEY = "re_test_123";
   process.env.MAIL_FROM = "Proofboard <no-reply@proofboard.test>";
+  delete process.env.BETA_ALLOWED_EMAILS;
 
   for (const [key, value] of Object.entries(overrides)) {
     if (value === undefined) {
