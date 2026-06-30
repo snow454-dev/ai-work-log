@@ -156,6 +156,8 @@ After deployment:
 
    Alternatively, open GitHub Actions, run `Trust Platform Beta Smoke`, and enter the deployed app URL.
 
+   If the URL is protected by Vercel Deployment Protection, either disable protection for the smoke target or run the smoke test with `BETA_SMOKE_VERCEL_BYPASS_SECRET` set to the Vercel automation bypass secret.
+
 2. Sign in as a professional.
 3. Create or update a profile.
 4. Create one completed project using a friendly company-domain reviewer email.

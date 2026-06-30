@@ -8,6 +8,9 @@ function usage() {
 
 You can also set APP_URL and run:
   APP_URL=https://your-deployment.example.com npm run beta:smoke
+
+For Vercel deployments protected by Deployment Protection, set:
+  BETA_SMOKE_VERCEL_BYPASS_SECRET=... npm run beta:smoke -- --url https://...
 `);
 }
 
@@ -38,10 +41,32 @@ function normalizeBaseUrl(raw) {
 }
 
 const baseUrl = normalizeBaseUrl(optionValue("--url") ?? process.env.APP_URL);
+const vercelProtectionBypass =
+  process.env.BETA_SMOKE_VERCEL_BYPASS_SECRET ??
+  process.env.VERCEL_AUTOMATION_BYPASS_SECRET;
 
 if (!baseUrl) {
   usage();
   process.exit(1);
+}
+
+function deploymentProtectionError(body) {
+  return body.includes("Vercel") && body.includes("Protection")
+    ? "Deployment appears to be behind Vercel Deployment Protection. Set BETA_SMOKE_VERCEL_BYPASS_SECRET or disable protection for the smoke test."
+    : undefined;
+}
+
+function headers() {
+  const requestHeaders = {
+    "User-Agent": "proofboard-beta-smoke/1.0",
+  };
+
+  if (vercelProtectionBypass) {
+    requestHeaders["x-vercel-protection-bypass"] = vercelProtectionBypass;
+    requestHeaders["x-vercel-set-bypass-cookie"] = "true";
+  }
+
+  return requestHeaders;
 }
 
 const checks = [
@@ -51,6 +76,16 @@ const checks = [
     validate: async (response) => {
       if (!response.ok) {
         return `Expected HTTP 200, got ${response.status}`;
+      }
+
+      const contentType = response.headers.get("content-type") ?? "";
+
+      if (!contentType.includes("application/json")) {
+        const body = await response.text();
+        return (
+          deploymentProtectionError(body) ??
+          `Expected JSON health response, got ${contentType || "unknown content type"}`
+        );
       }
 
       const json = await response.json();
@@ -67,6 +102,11 @@ const checks = [
       }
 
       const body = await response.text();
+      const protectionError = deploymentProtectionError(body);
+
+      if (protectionError) {
+        return protectionError;
+      }
 
       return body.includes("Proofboard") && body.includes("企業確認")
         ? undefined
@@ -82,6 +122,11 @@ const checks = [
       }
 
       const body = await response.text();
+      const protectionError = deploymentProtectionError(body);
+
+      if (protectionError) {
+        return protectionError;
+      }
 
       return body.includes("メールアドレス") &&
         body.includes("安全なリンクをメールで受け取る")
@@ -98,6 +143,11 @@ const checks = [
       }
 
       const body = await response.text();
+      const protectionError = deploymentProtectionError(body);
+
+      if (protectionError) {
+        return protectionError;
+      }
 
       return body.includes("AI開発者側の価値") &&
         body.includes("セキュリティ上、β利用で問題ない")
@@ -114,6 +164,11 @@ const checks = [
       }
 
       const body = await response.text();
+      const protectionError = deploymentProtectionError(body);
+
+      if (protectionError) {
+        return protectionError;
+      }
 
       return body.includes("Proofboardのβアクセスを申請する") &&
         body.includes("プライベートβアクセスを申請") &&
@@ -133,9 +188,7 @@ for (const check of checks) {
 
   try {
     const response = await fetch(url, {
-      headers: {
-        "User-Agent": "proofboard-beta-smoke/1.0",
-      },
+      headers: headers(),
       redirect: "follow",
     });
     const error = await check.validate(response);
