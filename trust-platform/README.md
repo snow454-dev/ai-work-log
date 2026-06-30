@@ -51,8 +51,9 @@ npm run beta:smoke -- --url https://your-deployment.example.com
 
 1. Create a hosted Supabase project.
 2. Apply `supabase/migrations`.
-3. Configure Supabase Auth magic-link redirect URLs to the deployed `APP_URL`.
-4. Configure production env vars:
+3. Create a Vercel project with Root Directory set to `trust-platform`.
+4. Configure Supabase Auth magic-link redirect URLs to the deployed `APP_URL`.
+5. Configure production env vars:
    - `NEXT_PUBLIC_SUPABASE_URL`
    - `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
    - `SUPABASE_SECRET_KEY`
@@ -63,9 +64,9 @@ npm run beta:smoke -- --url https://your-deployment.example.com
    - `MAIL_TRANSPORT=resend`
    - `RESEND_API_KEY`
    - `MAIL_FROM`
-5. Deploy the Next.js app.
-6. Run `npm run beta:smoke -- --url https://YOUR-DEPLOYED-APP`.
-7. Run the first real smoke test with a friendly company-domain reviewer email.
+6. Deploy the Next.js app. `trust-platform/vercel.json` pins the minimal Next.js build settings.
+7. Run `npm run beta:smoke -- --url https://YOUR-DEPLOYED-APP`.
+8. Run the first real smoke test with a friendly company-domain reviewer email.
 
 See [docs/private-beta-runbook.md](docs/private-beta-runbook.md) for the full beta launch runbook.
 

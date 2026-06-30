@@ -71,6 +71,18 @@ npm run beta:check-env:prod
 5. Configure allowed site URLs and redirect URLs for the deployed domain.
 6. Keep the service role key server-only.
 
+## Vercel setup
+
+Create one Vercel project for the beta app:
+
+- Root Directory: `trust-platform`
+- Framework Preset: Next.js
+- Install Command: `npm ci`
+- Build Command: `npm run build`
+- Development Command: `npm run dev`
+
+These commands are also pinned in `vercel.json` so the deployment does not accidentally build another app in the repository.
+
 ## Professional access control
 
 Set `BETA_ALLOWED_EMAILS` before inviting users. It is a comma or newline separated list of exact professional account emails.
