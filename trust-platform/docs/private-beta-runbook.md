@@ -11,7 +11,7 @@ This runbook is for the first controlled beta with known professionals and known
 - Hosted Supabase migrations are applied.
 - Supabase Auth redirect URLs include the deployed `APP_URL`.
 - Transactional email is configured with a verified sender domain.
-- `/api/health` returns `ok: true` on the deployed app.
+- `/api/health` returns `ok: true` on the deployed app, including `checks.betaAccess.allowlistConfigured: true`.
 - Privacy and terms pages have been reviewed for the first design partners.
 
 ## Environment variables
@@ -82,6 +82,8 @@ BETA_ALLOWED_EMAILS=founder@example.com,design-partner@example.com
 ```
 
 When this variable is set, only listed professionals can request sign-in magic links. Company reviewers are not blocked by this setting because they use scoped verification links and OTP.
+
+In deployed beta environments, `/api/health` fails when this allowlist is missing. That makes the smoke test catch accidental open signup before customer invitations go out.
 
 ## Email setup
 

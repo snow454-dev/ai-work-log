@@ -1,5 +1,6 @@
 import { ZodError } from "zod";
 
+import { parseBetaAllowedEmails } from "@/domain/beta-access";
 import { parseServerEnv } from "@/lib/env-schema";
 
 export const dynamic = "force-dynamic";
@@ -19,6 +20,7 @@ function configurationCheck():
   | {
       ok: true;
       mailTransport: "smtp" | "resend";
+      betaAllowlistConfigured: boolean;
     }
   | {
       ok: false;
@@ -30,6 +32,8 @@ function configurationCheck():
     return {
       ok: true,
       mailTransport: env.MAIL_TRANSPORT,
+      betaAllowlistConfigured:
+        parseBetaAllowedEmails(env.BETA_ALLOWED_EMAILS).length > 0,
     };
   } catch (error) {
     if (error instanceof ZodError) {
@@ -50,19 +54,40 @@ function configurationCheck():
   }
 }
 
+function betaAccessCheck({
+  configuration,
+  environment,
+}: {
+  configuration: ReturnType<typeof configurationCheck>;
+  environment: string;
+}) {
+  const required = environment !== "development" && environment !== "test";
+  const allowlistConfigured =
+    configuration.ok && configuration.betaAllowlistConfigured;
+
+  return {
+    ok: !required || allowlistConfigured,
+    required,
+    allowlistConfigured,
+  };
+}
+
 export async function GET() {
+  const environment = environmentLabel();
   const configuration = configurationCheck();
-  const ok = configuration.ok;
+  const betaAccess = betaAccessCheck({ configuration, environment });
+  const ok = configuration.ok && betaAccess.ok;
 
   return Response.json(
     {
       ok,
       service: "proofboard",
       checkedAt: new Date().toISOString(),
-      environment: environmentLabel(),
+      environment,
       commit: commitSha(),
       checks: {
         configuration,
+        betaAccess,
       },
     },
     {

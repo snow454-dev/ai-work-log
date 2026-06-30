@@ -76,3 +76,4 @@ See [docs/private-beta-runbook.md](docs/private-beta-runbook.md) for the full be
 - The beta legal pages are lightweight operating terms for known design partners, not final counsel-reviewed public-launch terms.
 - Keep the first cohort small: 3-5 known professionals and companies.
 - Set `BETA_ALLOWED_EMAILS` before production beta so only invited professionals can create/sign in to workspaces. Company reviewers still use secure invitation links and OTP.
+- `/api/health` reports whether the beta allowlist is configured and fails in deployed beta environments when it is missing.
