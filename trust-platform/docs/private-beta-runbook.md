@@ -111,6 +111,24 @@ When this variable is set, only listed professionals can request sign-in magic l
 
 In deployed beta environments, `/api/health` fails when this allowlist is missing. That makes the smoke test catch accidental open signup before customer invitations go out.
 
+## Beta access request intake
+
+The public `/beta-access` page collects purchase-intent and design-partner requests from AI developers and company buyers. Requests are stored in `public.beta_access_requests`.
+
+Operational handling:
+
+1. Review new requests in Supabase using the service-role dashboard or a controlled internal query.
+2. Prioritize requests with one real completed AI solution project or a concrete company buyer need.
+3. If approved, add the requester work email to `BETA_ALLOWED_EMAILS`.
+4. Ask the requester to sign in and verify one project before expanding usage.
+5. Mark the request status internally as `reviewing`, `invited`, `declined`, or `closed`.
+
+Security notes:
+
+- The table has RLS forced and no direct client read policy.
+- Public submission goes through `create_beta_access_request`.
+- Submitting the form does not publish proof, expose reviewer contacts, or create a professional account by itself.
+
 ## Email setup
 
 For beta, use a verified transactional email provider account.

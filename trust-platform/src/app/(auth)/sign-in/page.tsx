@@ -1,10 +1,11 @@
 "use client";
 
+import Link from "next/link";
 import { use, useActionState } from "react";
 
 import { signIn, type SignInState } from "@/app/actions/auth";
 import { LanguageSwitcher } from "@/components/language-switcher";
-import { resolveLocale, type Locale } from "@/lib/i18n";
+import { localizedHref, resolveLocale, type Locale } from "@/lib/i18n";
 
 const initialState: SignInState = {};
 
@@ -23,6 +24,8 @@ const signInCopy: Record<
     sent: string;
     emailLabel: string;
     emailHelp: string;
+    accessHelp: string;
+    accessCta: string;
     sending: string;
     submit: string;
   }
@@ -38,6 +41,8 @@ const signInCopy: Record<
       "Check your inbox for a secure sign-in link. You can keep this tab open while you verify your email.",
     emailLabel: "Email address",
     emailHelp: "We will email a magic link. No password is required.",
+    accessHelp: "Not invited yet?",
+    accessCta: "Request private beta access",
     sending: "Sending secure link…",
     submit: "Email me a secure link",
   },
@@ -52,6 +57,8 @@ const signInCopy: Record<
       "安全なログインリンクをメールで送信しました。メール確認中もこのタブは開いたままで大丈夫です。",
     emailLabel: "メールアドレス",
     emailHelp: "パスワード不要のマジックリンクをメールで送ります。",
+    accessHelp: "まだ招待されていませんか？",
+    accessCta: "プライベートβアクセスを申請",
     sending: "安全なリンクを送信中…",
     submit: "安全なリンクをメールで受け取る",
   },
@@ -188,6 +195,16 @@ export default function SignInPage({
             {pending ? copy.sending : copy.submit}
           </button>
         </form>
+
+        <p className="mt-6 text-center text-sm text-stone-600">
+          {copy.accessHelp}{" "}
+          <Link
+            href={localizedHref("/beta-access", locale)}
+            className="font-medium text-stone-950 underline underline-offset-4"
+          >
+            {copy.accessCta}
+          </Link>
+        </p>
       </section>
     </main>
   );

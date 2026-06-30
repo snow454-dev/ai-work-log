@@ -12,7 +12,7 @@ import {
 export const metadata: Metadata = {
   title: "Beta Privacy Notice | Proofboard",
   description:
-    "How Proofboard handles profile, project, company verification, and reference request data during the private beta.",
+    "How Proofboard handles beta access, profile, project, company verification, and reference request data during the private beta.",
 };
 
 const privacyCopy: Record<
@@ -27,18 +27,18 @@ const privacyCopy: Record<
 > = {
   en: {
     badge: "Private beta",
-    updated: "Last updated June 28, 2026",
+    updated: "Last updated June 30, 2026",
     title: "Beta Privacy Notice",
     intro:
       "Proofboard helps independent professionals turn completed client work into company-approved proof and consented reference paths. This notice explains the data handling model for the private beta. It is intended for early customer testing and should be reviewed by counsel before broad public launch.",
     sections: [
       {
         title: "What we collect",
-        body: "We collect account details, professional profile information, project facts, company reviewer email addresses, reviewer verification responses, public proof settings, reference request submissions, audit events, and operational logs needed to run and secure the service.",
+        body: "We collect beta access requests, account details, professional profile information, project facts, company reviewer email addresses, reviewer verification responses, public proof settings, reference request submissions, audit events, and operational logs needed to run and secure the service.",
       },
       {
         title: "How we use data",
-        body: "We use this data to authenticate users, create project records, send verification links, show only approved public proof, route reference requests to the professional first, prevent abuse, and support beta operations.",
+        body: "We use this data to review beta access, authenticate users, create project records, send verification links, show only approved public proof, route reference requests to the professional first, prevent abuse, and support beta operations.",
       },
       {
         title: "What is public",
@@ -64,18 +64,18 @@ const privacyCopy: Record<
   },
   ja: {
     badge: "プライベートβ",
-    updated: "最終更新日 2026年6月28日",
+    updated: "最終更新日 2026年6月30日",
     title: "β版プライバシー通知",
     intro:
       "Proofboardは、個人事業者・フリーランスが完了した顧客案件を、企業承認済みの実績と同意に基づく紹介ルートに変えるためのサービスです。この通知はプライベートβにおけるデータ取扱いの考え方を説明するものです。正式公開前には専門家によるレビューを前提とします。",
     sections: [
       {
         title: "収集する情報",
-        body: "アカウント情報、プロフィール情報、案件の事実情報、企業確認担当者のメールアドレス、確認結果、公開設定、紹介依頼、監査イベント、サービス運用と保護に必要なログを収集します。",
+        body: "βアクセス申請、アカウント情報、プロフィール情報、案件の事実情報、企業確認担当者のメールアドレス、確認結果、公開設定、紹介依頼、監査イベント、サービス運用と保護に必要なログを収集します。",
       },
       {
         title: "利用目的",
-        body: "認証、案件記録の作成、確認リンクの送信、承認された公開実績の表示、本人への紹介依頼ルーティング、不正利用防止、β運用のために利用します。",
+        body: "βアクセス審査、認証、案件記録の作成、確認リンクの送信、承認された公開実績の表示、本人への紹介依頼ルーティング、不正利用防止、β運用のために利用します。",
       },
       {
         title: "公開される情報",

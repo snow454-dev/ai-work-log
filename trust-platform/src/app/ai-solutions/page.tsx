@@ -117,7 +117,7 @@ const pageCopy: Record<
         body: "Build a verified profile from completed AI solution work.",
         points: ["Verified project record", "Public proof page", "Reference request inbox"],
         cta: "Start as developer",
-        href: "/sign-in?intent=developer-beta",
+        href: "/beta-access?intent=developer",
       },
       {
         name: "Company buyer beta",
@@ -125,7 +125,7 @@ const pageCopy: Record<
         body: "Use verified proof to find credible AI engineers.",
         points: ["Safer shortlist", "Consent-based reference path", "No reviewer contact exposure"],
         cta: "Start as company",
-        href: "/sign-in?intent=company-beta",
+        href: "/beta-access?intent=company",
       },
     ],
     buyerTitle: "How buyers start safely",
@@ -208,7 +208,7 @@ const pageCopy: Record<
         body: "完了したAIソリューション案件を、検証済みプロフィールに変える。",
         points: ["検証済み案件レコード", "公開実績ページ", "紹介依頼 inbox"],
         cta: "開発者として開始",
-        href: "/sign-in?intent=developer-beta",
+        href: "/beta-access?intent=developer",
       },
       {
         name: "企業側β",
@@ -216,7 +216,7 @@ const pageCopy: Record<
         body: "信頼できるAIエンジニアを、検証済み実績から探す。",
         points: ["安全な候補者選定", "同意ベースの紹介ルート", "確認担当者の連絡先非公開"],
         cta: "企業として開始",
-        href: "/sign-in?intent=company-beta",
+        href: "/beta-access?intent=company",
       },
     ],
     buyerTitle: "安全に導入・購入検討を始める流れ",
@@ -275,7 +275,7 @@ export default async function AiSolutionsPage({
           <div className="flex items-center gap-2">
             <LanguageSwitcher locale={locale} path="/ai-solutions" />
             <Link
-              href={localizedHref("/sign-in", locale)}
+              href={localizedHref("/beta-access", locale)}
               className="rounded-full bg-zinc-950 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800 focus:outline-none focus:ring-2 focus:ring-zinc-950 focus:ring-offset-2"
             >
               {copy.signIn}
@@ -296,7 +296,7 @@ export default async function AiSolutionsPage({
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <Link
-                href={localizedHref("/sign-in", locale)}
+                href={localizedHref("/beta-access", locale)}
                 className="inline-flex justify-center rounded-full bg-zinc-950 px-5 py-3 text-sm font-semibold text-white hover:bg-zinc-800 focus:outline-none focus:ring-2 focus:ring-zinc-950 focus:ring-offset-2"
               >
                 {copy.primaryCta}
@@ -428,7 +428,7 @@ export default async function AiSolutionsPage({
           </p>
           <div className="mt-6 flex flex-col justify-center gap-3 sm:flex-row">
             <Link
-              href={localizedHref("/sign-in", locale)}
+              href={localizedHref("/beta-access", locale)}
               className="inline-flex justify-center rounded-full bg-zinc-950 px-5 py-3 text-sm font-semibold text-white hover:bg-zinc-800 focus:outline-none focus:ring-2 focus:ring-zinc-950 focus:ring-offset-2"
             >
               {copy.primaryCta}

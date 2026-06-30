@@ -107,7 +107,7 @@ export default async function Home({
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <Link
-                href={localizedHref("/sign-in", locale)}
+                href={localizedHref("/beta-access", locale)}
                 className="inline-flex justify-center rounded-full bg-white px-5 py-3 text-sm font-medium text-zinc-950 hover:bg-zinc-200 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-zinc-950"
               >
                 {copy.primaryCta}

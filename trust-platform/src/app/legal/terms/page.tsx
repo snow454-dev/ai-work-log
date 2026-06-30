@@ -27,7 +27,7 @@ const termsCopy: Record<
 > = {
   en: {
     badge: "Private beta",
-    updated: "Last updated June 28, 2026",
+    updated: "Last updated June 30, 2026",
     title: "Beta Terms",
     intro:
       "These beta terms set expectations for invited users testing Proofboard. They are lightweight operating terms for early customer use and should be replaced with counsel-reviewed production terms before a broad public launch.",
@@ -35,6 +35,10 @@ const termsCopy: Record<
       {
         title: "Private beta access",
         body: "Proofboard is currently invitation-only. Access may be limited, changed, paused, or revoked while the product is being tested and hardened.",
+      },
+      {
+        title: "Beta access requests",
+        body: "Submitting a beta access request does not guarantee access, pricing, support, or availability. Proofboard may prioritize requests that fit the current design-partner scope.",
       },
       {
         title: "Accurate submissions",
@@ -64,7 +68,7 @@ const termsCopy: Record<
   },
   ja: {
     badge: "プライベートβ",
-    updated: "最終更新日 2026年6月28日",
+    updated: "最終更新日 2026年6月30日",
     title: "β版利用規約",
     intro:
       "このβ版利用規約は、招待ユーザーがProofboardを試験利用する際の前提を示すものです。初期顧客利用のための軽量な運用規約であり、広く一般公開する前には専門家レビュー済みの正式規約へ置き換える前提です。",
@@ -72,6 +76,10 @@ const termsCopy: Record<
       {
         title: "プライベートβへのアクセス",
         body: "Proofboardは現在招待制です。プロダクトの検証と改善中は、アクセスが制限、変更、一時停止、または取り消される場合があります。",
+      },
+      {
+        title: "βアクセス申請",
+        body: "βアクセス申請の送信は、アクセス、価格、サポート、提供可否を保証するものではありません。Proofboardは現在のデザインパートナー範囲に合う申請を優先する場合があります。",
       },
       {
         title: "正確な提出",
