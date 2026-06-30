@@ -13,6 +13,7 @@ const demoCopy: Record<
   Locale,
   {
     badge: string;
+    businessPage: string;
     heroEyebrow: string;
     name: string;
     headline: string;
@@ -59,6 +60,7 @@ const demoCopy: Record<
 > = {
   en: {
     badge: "UI demo",
+    businessPage: "Business page",
     heroEyebrow: "Company-approved proof for independent work",
     name: "Aiko Tanaka",
     headline:
@@ -113,6 +115,7 @@ const demoCopy: Record<
   },
   ja: {
     badge: "UIデモ",
+    businessPage: "ビジネスページ",
     heroEyebrow: "個人の仕事を企業承認済みの実績へ",
     name: "田中 愛子",
     headline:
@@ -184,6 +187,12 @@ export default async function DemoPage({
           </Link>
           <div className="flex items-center gap-2">
             <LanguageSwitcher locale={locale} path="/demo" />
+            <Link
+              href={localizedHref("/ai-solutions", locale)}
+              className="rounded-full border border-zinc-200 bg-white px-3 py-1 text-xs font-medium text-zinc-600 hover:text-zinc-950 focus:outline-none focus:ring-2 focus:ring-zinc-950 focus:ring-offset-2"
+            >
+              {copy.businessPage}
+            </Link>
             <p className="rounded-full border border-zinc-200 bg-white px-3 py-1 text-xs font-medium text-zinc-600">
               {copy.badge}
             </p>

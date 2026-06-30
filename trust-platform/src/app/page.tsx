@@ -18,6 +18,7 @@ const homeCopy: Record<
     intro: string;
     primaryCta: string;
     secondaryCta: string;
+    businessCta: string;
     cardEyebrow: string;
     cardTitle: string;
     cardStatus: string;
@@ -37,6 +38,7 @@ const homeCopy: Record<
       "Record work from Upwork, サンカク, referrals, direct contracts, or other platforms. The company verifies what is true and controls what can be shared publicly.",
     primaryCta: "Start with one project",
     secondaryCta: "Open dashboard",
+    businessCta: "For AI builders and companies",
     cardEyebrow: "Company verified",
     cardTitle: "Reporting automation",
     cardStatus: "Approved",
@@ -55,6 +57,7 @@ const homeCopy: Record<
       "Upwork、サンカク、紹介、直接契約などで完了した仕事を記録。企業は事実を確認し、公開してよい情報だけを承認できます。",
     primaryCta: "1件の実績から始める",
     secondaryCta: "ダッシュボードを開く",
+    businessCta: "AI開発者・企業向けページ",
     cardEyebrow: "企業確認済み",
     cardTitle: "レポート自動化",
     cardStatus: "承認済み",
@@ -114,6 +117,12 @@ export default async function Home({
                 className="inline-flex justify-center rounded-full border border-white/20 px-5 py-3 text-sm font-medium text-white hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-zinc-950"
               >
                 {copy.secondaryCta}
+              </Link>
+              <Link
+                href={localizedHref("/ai-solutions", locale)}
+                className="inline-flex justify-center rounded-full border border-amber-200/40 px-5 py-3 text-sm font-medium text-amber-100 hover:bg-amber-200/10 focus:outline-none focus:ring-2 focus:ring-amber-100 focus:ring-offset-2 focus:ring-offset-zinc-950"
+              >
+                {copy.businessCta}
               </Link>
             </div>
           </div>

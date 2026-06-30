@@ -6,17 +6,20 @@ const footerCopy: Record<
   Locale,
   {
     notice: string;
+    business: string;
     privacy: string;
     terms: string;
   }
 > = {
   en: {
     notice: "© 2026 Proofboard. Private beta.",
+    business: "AI solutions",
     privacy: "Privacy",
     terms: "Terms",
   },
   ja: {
     notice: "© 2026 Proofboard. プライベートβ版。",
+    business: "AI導入",
     privacy: "プライバシー",
     terms: "利用規約",
   },
@@ -30,6 +33,12 @@ export function LightLegalFooter({ locale = "en" }: { locale?: Locale }) {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <p>{copy.notice}</p>
         <nav aria-label="Legal" className="flex gap-4">
+          <Link
+            href={localizedHref("/ai-solutions", locale)}
+            className="hover:text-zinc-950"
+          >
+            {copy.business}
+          </Link>
           <Link
             href={localizedHref("/legal/privacy", locale)}
             className="hover:text-zinc-950"
@@ -56,6 +65,12 @@ export function DarkLegalFooter({ locale = "en" }: { locale?: Locale }) {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <p>{copy.notice}</p>
         <nav aria-label="Legal" className="flex gap-4">
+          <Link
+            href={localizedHref("/ai-solutions", locale)}
+            className="hover:text-white"
+          >
+            {copy.business}
+          </Link>
           <Link
             href={localizedHref("/legal/privacy", locale)}
             className="hover:text-white"
