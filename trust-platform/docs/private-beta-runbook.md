@@ -24,7 +24,6 @@ Required:
 
 - `NEXT_PUBLIC_SUPABASE_URL`
 - `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
-- `SUPABASE_SECRET_KEY`
 - `APP_URL`
 - `TOKEN_PEPPER`
 - `OTP_PEPPER`
@@ -83,7 +82,7 @@ npm run beta:release-check -- --env-file .env.production.local
    ```
 
 5. Configure allowed site URLs and redirect URLs for the deployed domain.
-6. Keep the service role key server-only.
+6. Do not add a Supabase service role key to Vercel. Reviewer and receipt flows use token-gated security-definer RPCs instead.
 
 ## Vercel setup
 

@@ -7,7 +7,6 @@ const originalEnv = { ...process.env };
 function setCompleteEnv(overrides: Record<string, string | undefined> = {}) {
   process.env.NEXT_PUBLIC_SUPABASE_URL = "https://project.supabase.co";
   process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY = "publishable_live";
-  process.env.SUPABASE_SECRET_KEY = "service_role_live";
   process.env.APP_URL = "https://proofboard.test";
   process.env.TOKEN_PEPPER = "0123456789abcdef0123456789abcdef";
   process.env.OTP_PEPPER = "abcdef0123456789abcdef0123456789";
@@ -62,11 +61,10 @@ describe("/api/health", () => {
 
     expect(response.status).toBe(503);
     expect(body.checks.configuration.missingOrInvalid).toEqual(
-      expect.arrayContaining([
-        "MAIL_FROM",
-        "RESEND_API_KEY",
-        "SUPABASE_SECRET_KEY",
-      ]),
+      expect.arrayContaining(["MAIL_FROM", "RESEND_API_KEY"]),
+    );
+    expect(body.checks.configuration.missingOrInvalid).not.toContain(
+      "SUPABASE_SECRET_KEY",
     );
   });
 

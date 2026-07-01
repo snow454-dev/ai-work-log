@@ -131,7 +131,6 @@ function looksLikeEmail(current) {
 const required = [
   "NEXT_PUBLIC_SUPABASE_URL",
   "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY",
-  "SUPABASE_SECRET_KEY",
   "APP_URL",
   "TOKEN_PEPPER",
   "OTP_PEPPER",

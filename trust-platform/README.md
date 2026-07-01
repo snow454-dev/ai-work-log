@@ -65,7 +65,6 @@ After deployment, you can also run the manual GitHub Actions workflow `Trust Pla
 5. Configure production env vars:
    - `NEXT_PUBLIC_SUPABASE_URL`
    - `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
-   - `SUPABASE_SECRET_KEY`
    - `APP_URL`
    - `TOKEN_PEPPER`
    - `OTP_PEPPER`
@@ -83,7 +82,8 @@ See [docs/private-beta-runbook.md](docs/private-beta-runbook.md) for the full be
 ## Safety notes
 
 - Do not commit `.env*` files except `.env.example`.
-- Do not expose `SUPABASE_SECRET_KEY`, token peppers, OTP peppers, reviewer emails, OTPs, or token hashes to client code or logs.
+- Do not expose token peppers, OTP peppers, reviewer emails, OTPs, or token hashes to client code or logs.
+- The app does not require a Supabase service role key in Vercel; token-gated reviewer and receipt access runs through security-definer RPCs that return only the fields needed for each flow.
 - The beta legal pages are lightweight operating terms for known design partners, not final counsel-reviewed public-launch terms.
 - Keep the first cohort small: 3-5 known professionals and companies.
 - Set `BETA_ALLOWED_EMAILS` before production beta so only invited professionals can create/sign in to workspaces. Company reviewers still use secure invitation links and OTP.

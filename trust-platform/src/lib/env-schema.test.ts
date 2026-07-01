@@ -2,13 +2,13 @@ import { describe, expect, it } from "vitest";
 import { parseServerEnv } from "./env-schema";
 
 describe("parseServerEnv", () => {
-  it("rejects missing server secrets", () => {
+  it("rejects missing required runtime configuration", () => {
     expect(() =>
       parseServerEnv({
         NEXT_PUBLIC_SUPABASE_URL: "http://127.0.0.1:54321",
         NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: "sb_publishable_test",
       }),
-    ).toThrow("SUPABASE_SECRET_KEY");
+    ).toThrow("APP_URL");
   });
 
   it("accepts a complete local configuration", () => {
@@ -16,7 +16,6 @@ describe("parseServerEnv", () => {
       parseServerEnv({
         NEXT_PUBLIC_SUPABASE_URL: "http://127.0.0.1:54321",
         NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: "sb_publishable_test",
-        SUPABASE_SECRET_KEY: "sb_secret_test",
         APP_URL: "http://localhost:3000",
         TOKEN_PEPPER: "0123456789abcdef0123456789abcdef",
         OTP_PEPPER: "abcdef0123456789abcdef0123456789",
