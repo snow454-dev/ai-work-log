@@ -72,15 +72,13 @@ function configurationCheck():
 }
 
 function betaAccessCheck({
-  configuration,
   environment,
 }: {
-  configuration: ReturnType<typeof configurationCheck>;
   environment: string;
 }) {
   const required = environment !== "development" && environment !== "test";
   const allowlistConfigured =
-    configuration.ok && configuration.betaAllowlistConfigured;
+    parseBetaAllowedEmails(process.env.BETA_ALLOWED_EMAILS).length > 0;
 
   return {
     ok: !required || allowlistConfigured,
@@ -92,7 +90,7 @@ function betaAccessCheck({
 export async function GET() {
   const environment = environmentLabel();
   const configuration = configurationCheck();
-  const betaAccess = betaAccessCheck({ configuration, environment });
+  const betaAccess = betaAccessCheck({ environment });
   const ok = configuration.ok && betaAccess.ok;
 
   return Response.json(
