@@ -69,15 +69,53 @@ function headers() {
   return requestHeaders;
 }
 
+function summarizeHealthResponse(json) {
+  if (!json || typeof json !== "object") {
+    return "Health response was not a JSON object.";
+  }
+
+  const checks = json.checks && typeof json.checks === "object" ? json.checks : {};
+  const configuration =
+    checks.configuration && typeof checks.configuration === "object"
+      ? checks.configuration
+      : undefined;
+  const betaAccess =
+    checks.betaAccess && typeof checks.betaAccess === "object"
+      ? checks.betaAccess
+      : undefined;
+
+  const details = [];
+
+  if (
+    configuration &&
+    Array.isArray(configuration.missingOrInvalid) &&
+    configuration.missingOrInvalid.length > 0
+  ) {
+    details.push(
+      `missing/invalid env: ${configuration.missingOrInvalid.join(", ")}`,
+    );
+  }
+
+  if (betaAccess) {
+    details.push(
+      `betaAccess ok=${String(betaAccess.ok)} required=${String(
+        betaAccess.required,
+      )} allowlistConfigured=${String(betaAccess.allowlistConfigured)}`,
+    );
+  }
+
+  if (details.length > 0) {
+    return details.join("; ");
+  }
+
+  return `health ok=${String(json.ok)}`;
+}
+
 const checks = [
   {
     name: "health endpoint returns ok",
     path: "/api/health",
     validate: async (response) => {
-      if (!response.ok) {
-        return `Expected HTTP 200, got ${response.status}`;
-      }
-
       const contentType = response.headers.get("content-type") ?? "";
 
       if (!contentType.includes("application/json")) {
@@ -90,7 +128,11 @@ const checks = [
 
       const json = await response.json();
 
-      return json.ok === true ? undefined : "Expected JSON body with ok: true";
+      return response.ok && json.ok === true
+        ? undefined
+        : `Expected health ok, got HTTP ${response.status}. ${summarizeHealthResponse(
+            json,
+          )}`;
     },
   },
   {
