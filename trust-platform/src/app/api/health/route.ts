@@ -37,13 +37,30 @@ function configurationCheck():
     };
   } catch (error) {
     if (error instanceof ZodError) {
+      const missingOrInvalid = new Set(
+        error.issues.map((issue) => String(issue.path[0] ?? "unknown")),
+      );
+
+      if (
+        process.env.MAIL_TRANSPORT === "resend" &&
+        !process.env.RESEND_API_KEY
+      ) {
+        missingOrInvalid.add("RESEND_API_KEY");
+      }
+
+      if (process.env.MAIL_TRANSPORT === "smtp") {
+        if (!process.env.SMTP_HOST) {
+          missingOrInvalid.add("SMTP_HOST");
+        }
+
+        if (!process.env.SMTP_PORT) {
+          missingOrInvalid.add("SMTP_PORT");
+        }
+      }
+
       return {
         ok: false,
-        missingOrInvalid: [
-          ...new Set(
-            error.issues.map((issue) => String(issue.path[0] ?? "unknown")),
-          ),
-        ].sort(),
+        missingOrInvalid: [...missingOrInvalid].sort(),
       };
     }
 

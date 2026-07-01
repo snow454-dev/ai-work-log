@@ -46,6 +46,30 @@ describe("/api/health", () => {
     expect(body.checks.configuration.missingOrInvalid).toContain("APP_URL");
   });
 
+  it("reports conditional Resend configuration even when other required values are missing", async () => {
+    process.env = {
+      NODE_ENV: "production",
+      MAIL_TRANSPORT: "resend",
+      NEXT_PUBLIC_SUPABASE_URL: "https://project.supabase.co",
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: "publishable_live",
+      APP_URL: "https://proofboard.test",
+      TOKEN_PEPPER: "0123456789abcdef0123456789abcdef",
+      OTP_PEPPER: "abcdef0123456789abcdef0123456789",
+    };
+
+    const response = await GET();
+    const body = await response.json();
+
+    expect(response.status).toBe(503);
+    expect(body.checks.configuration.missingOrInvalid).toEqual(
+      expect.arrayContaining([
+        "MAIL_FROM",
+        "RESEND_API_KEY",
+        "SUPABASE_SECRET_KEY",
+      ]),
+    );
+  });
+
   it("requires the beta allowlist outside development and test", async () => {
     setCompleteEnv({ VERCEL_ENV: "production" });
 
