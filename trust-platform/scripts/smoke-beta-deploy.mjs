@@ -58,7 +58,7 @@ function deploymentProtectionError(body) {
 
 function headers() {
   const requestHeaders = {
-    "User-Agent": "proofboard-beta-smoke/1.0",
+    "User-Agent": "jisseki-beta-smoke/1.0",
   };
 
   if (vercelProtectionBypass) {
@@ -150,9 +150,9 @@ const checks = [
         return protectionError;
       }
 
-      return body.includes("Proofboard") && body.includes("企業確認")
+      return body.includes("JISSEKI") && body.includes("企業確認")
         ? undefined
-        : "Expected Proofboard Japanese landing content";
+        : "Expected JISSEKI Japanese landing content";
     },
   },
   {
@@ -212,7 +212,7 @@ const checks = [
         return protectionError;
       }
 
-      return body.includes("Proofboardのβアクセスを申請する") &&
+      return body.includes("JISSEKIのβアクセスを申請する") &&
         body.includes("プライベートβアクセスを申請") &&
         body.includes("企業側として使う")
         ? undefined
@@ -221,7 +221,7 @@ const checks = [
   },
 ];
 
-console.log(`Proofboard private beta smoke test: ${baseUrl}`);
+console.log(`JISSEKI private beta smoke test: ${baseUrl}`);
 
 let failures = 0;
 

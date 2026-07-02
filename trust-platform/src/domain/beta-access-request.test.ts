@@ -35,7 +35,7 @@ describe("parseBetaAccessRequest", () => {
         ...validRequest,
         intent: "investor",
       }),
-    ).toThrow("Choose how you want to use Proofboard");
+    ).toThrow("Choose how you want to use JISSEKI");
 
     expect(() =>
       parseBetaAccessRequest({

@@ -36,7 +36,7 @@ const invitationCopy: Record<
     invalidTitle: "This verification link is unavailable",
     invalidBody:
       "The link may be expired, revoked, or already used. Ask the professional to send a fresh verification request.",
-    back: "Back to Proofboard",
+    back: "Back to JISSEKI",
   },
   ja: {
     eyebrow: "企業確認",
@@ -49,7 +49,7 @@ const invitationCopy: Record<
     invalidTitle: "この確認リンクは利用できません",
     invalidBody:
       "リンクが期限切れ、取り消し済み、またはすでに使用済みの可能性があります。プロフェッショナルに新しい確認依頼を送ってもらってください。",
-    back: "Proofboardへ戻る",
+    back: "JISSEKIへ戻る",
   },
 };
 

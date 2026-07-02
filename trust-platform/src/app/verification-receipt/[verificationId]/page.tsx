@@ -59,7 +59,7 @@ const receiptCopy: Record<
     unavailableTitle: "Receipt unavailable",
     unavailableBody:
       "This receipt link may be invalid, expired, or incomplete. For beta support, contact the professional who sent the verification request.",
-    back: "Back to Proofboard",
+    back: "Back to JISSEKI",
     receipt: "Receipt",
     project: "Project",
     company: "Company",
@@ -77,13 +77,13 @@ const receiptCopy: Record<
     sharePublic: "Approved fields may appear publicly",
     referenceOnly: "Reference requests only; not public proof",
     notNow: "Not shareable now",
-    referenceAvailable: "Allowed through Proofboard",
+    referenceAvailable: "Allowed through JISSEKI",
     referenceUnavailable: "Not enabled",
     changeTitle: "Need to change this later?",
     changeBody:
       "During private beta, consent changes and disputes are handled manually so we can verify the requester and preserve the audit trail.",
     changeNote:
-      "Reply through your existing beta contact or ask the professional to contact Proofboard support with this receipt ID.",
+      "Reply through your existing beta contact or ask the professional to contact JISSEKI support with this receipt ID.",
   },
   ja: {
     eyebrow: "確認控え",
@@ -93,7 +93,7 @@ const receiptCopy: Record<
     unavailableTitle: "確認控えを利用できません",
     unavailableBody:
       "この控えリンクは無効、期限切れ、または不完全な可能性があります。β期間中のサポートは、確認依頼を送ったプロフェッショナルへ連絡してください。",
-    back: "Proofboardへ戻る",
+    back: "JISSEKIへ戻る",
     receipt: "控え",
     project: "案件",
     company: "企業",
@@ -111,13 +111,13 @@ const receiptCopy: Record<
     sharePublic: "承認済み項目を公開表示してよい",
     referenceOnly: "紹介依頼のみ可。公開実績としては掲載しない",
     notNow: "現時点では共有不可",
-    referenceAvailable: "Proofboard経由で許可",
+    referenceAvailable: "JISSEKI経由で許可",
     referenceUnavailable: "未許可",
     changeTitle: "後から変更が必要ですか？",
     changeBody:
       "非公開βでは、同意変更や異議申立てを手動で扱い、依頼者確認と監査履歴を保護します。",
     changeNote:
-      "既存のβ連絡経路で返信するか、この控えIDを添えてプロフェッショナルからProofboardサポートへ連絡してもらってください。",
+      "既存のβ連絡経路で返信するか、この控えIDを添えてプロフェッショナルからJISSEKIサポートへ連絡してもらってください。",
   },
 };
 
@@ -202,7 +202,7 @@ export default async function VerificationReceiptPage({
       <div className="mx-auto max-w-3xl px-5 py-8">
         <header className="flex items-center justify-between gap-4">
           <Link href={localizedHref("/", locale)} className="text-sm font-semibold">
-            Proofboard
+            JISSEKI
           </Link>
           <LanguageSwitcher locale={locale} path={languagePath} />
         </header>

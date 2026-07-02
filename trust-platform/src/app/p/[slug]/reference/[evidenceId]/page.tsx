@@ -33,7 +33,7 @@ const referencePageCopy: Record<
     proofEyebrow: "Company-approved proof",
     titlePrefix: "Request a reference path for",
     intro:
-      "This request goes to the professional first. Proofboard does not reveal or contact the company reviewer directly from this form.",
+      "This request goes to the professional first. JISSEKI does not reveal or contact the company reviewer directly from this form.",
     receivedTitle: "Request received",
     receivedBody:
       "The professional can now review your request and decide whether to route it into a reference conversation. Reviewer contact details remain private.",

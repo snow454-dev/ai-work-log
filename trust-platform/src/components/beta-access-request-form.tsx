@@ -48,7 +48,7 @@ const betaAccessFormCopy: Record<
     useCaseHelp:
       "Example: one completed AI automation project to verify, or a vendor search for a trusted AI engineer.",
     consent:
-      "I understand Proofboard will store this request so the beta team can review access and follow up.",
+      "I understand JISSEKI will store this request so the beta team can review access and follow up.",
     helpPrefix: "Beta use is subject to the",
     privacy: "Privacy Notice",
     terms: "Terms",
@@ -68,7 +68,7 @@ const betaAccessFormCopy: Record<
     useCaseHelp:
       "例: 完了済みAI自動化案件を1件検証したい、または信頼できるAIエンジニア選定に使いたい。",
     consent:
-      "Proofboardがβアクセス審査と連絡のためにこの申請を保存することを理解しています。",
+      "JISSEKIがβアクセス審査と連絡のためにこの申請を保存することを理解しています。",
     helpPrefix: "β利用には",
     privacy: "プライバシー通知",
     terms: "利用規約",

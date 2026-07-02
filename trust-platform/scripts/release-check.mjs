@@ -128,7 +128,7 @@ if (smokeUrl) {
   });
 }
 
-console.log("Proofboard private beta release check");
+console.log("JISSEKI private beta release check");
 
 try {
   for (const step of steps) {

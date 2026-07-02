@@ -91,7 +91,7 @@ const demoCopy: Record<
       "Automated weekly reporting and reduced manual spreadsheet work across the operations team.",
     referencePathTitle: "Structured reference path",
     referencePathBody:
-      "The company reviewer allowed future reference requests to be routed through Proofboard. Contact details stay private unless a future request is explicitly accepted.",
+      "The company reviewer allowed future reference requests to be routed through JISSEKI. Contact details stay private unless a future request is explicitly accepted.",
     referenceCta: "Request reference path",
     formEyebrow: "Structured reference request",
     formTitle: "Ask for a consented reference path",
@@ -146,7 +146,7 @@ const demoCopy: Record<
       "週次レポートを自動化し、業務チーム全体の手作業スプレッドシート作業を削減しました。",
     referencePathTitle: "構造化された紹介依頼ルート",
     referencePathBody:
-      "企業の確認担当者は、Proofboard経由の将来的な紹介依頼を許可しています。今後の依頼が明示的に承認されるまで、連絡先は非公開です。",
+      "企業の確認担当者は、JISSEKI経由の将来的な紹介依頼を許可しています。今後の依頼が明示的に承認されるまで、連絡先は非公開です。",
     referenceCta: "紹介依頼を送る",
     formEyebrow: "構造化された紹介依頼",
     formTitle: "同意に基づく紹介ルートを依頼する",
@@ -183,7 +183,7 @@ export default async function DemoPage({
       <div className="mx-auto max-w-6xl px-5 py-8">
         <header className="flex items-center justify-between gap-4">
           <Link href="/" className="text-sm font-semibold text-zinc-950">
-            Proofboard
+            JISSEKI
           </Link>
           <div className="flex items-center gap-2">
             <LanguageSwitcher locale={locale} path="/demo" />

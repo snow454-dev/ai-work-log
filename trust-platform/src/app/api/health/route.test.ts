@@ -7,12 +7,12 @@ const originalEnv = { ...process.env };
 function setCompleteEnv(overrides: Record<string, string | undefined> = {}) {
   process.env.NEXT_PUBLIC_SUPABASE_URL = "https://project.supabase.co";
   process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY = "publishable_live";
-  process.env.APP_URL = "https://proofboard.test";
+  process.env.APP_URL = "https://jisseki.test";
   process.env.TOKEN_PEPPER = "0123456789abcdef0123456789abcdef";
   process.env.OTP_PEPPER = "abcdef0123456789abcdef0123456789";
   process.env.MAIL_TRANSPORT = "resend";
   process.env.RESEND_API_KEY = "re_test_123";
-  process.env.MAIL_FROM = "Proofboard <no-reply@proofboard.test>";
+  process.env.MAIL_FROM = "JISSEKI <no-reply@jisseki.test>";
   delete process.env.BETA_ALLOWED_EMAILS;
 
   for (const [key, value] of Object.entries(overrides)) {
@@ -51,7 +51,7 @@ describe("/api/health", () => {
       MAIL_TRANSPORT: "resend",
       NEXT_PUBLIC_SUPABASE_URL: "https://project.supabase.co",
       NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: "publishable_live",
-      APP_URL: "https://proofboard.test",
+      APP_URL: "https://jisseki.test",
       TOKEN_PEPPER: "0123456789abcdef0123456789abcdef",
       OTP_PEPPER: "abcdef0123456789abcdef0123456789",
     };
@@ -75,10 +75,10 @@ describe("/api/health", () => {
       MAIL_TRANSPORT: "resend",
       NEXT_PUBLIC_SUPABASE_URL: "https://project.supabase.co",
       NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: "publishable_live",
-      APP_URL: "https://proofboard.test",
+      APP_URL: "https://jisseki.test",
       TOKEN_PEPPER: "0123456789abcdef0123456789abcdef",
       OTP_PEPPER: "abcdef0123456789abcdef0123456789",
-      BETA_ALLOWED_EMAILS: "founder@proofboard.test",
+      BETA_ALLOWED_EMAILS: "founder@jisseki.test",
     };
 
     const response = await GET();
@@ -111,7 +111,7 @@ describe("/api/health", () => {
   it("passes when production beta configuration includes an allowlist", async () => {
     setCompleteEnv({
       VERCEL_ENV: "production",
-      BETA_ALLOWED_EMAILS: "founder@proofboard.test",
+      BETA_ALLOWED_EMAILS: "founder@jisseki.test",
     });
 
     const response = await GET();
@@ -132,7 +132,7 @@ describe("/api/health", () => {
       MAIL_TRANSPORT: "manual",
       RESEND_API_KEY: undefined,
       MAIL_FROM: undefined,
-      BETA_ALLOWED_EMAILS: "founder@proofboard.test",
+      BETA_ALLOWED_EMAILS: "founder@jisseki.test",
     });
 
     const response = await GET();

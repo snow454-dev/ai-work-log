@@ -30,7 +30,7 @@ const reviewPageCopy: Record<
       "Confirm the facts, choose any public fields, and submit. This is not a positive-review prompt; it is a factual company verification.",
     submittedTitle: "Verification submitted",
     submittedBodyPrefix: "Thank you. The project is now marked as",
-    back: "Back to Proofboard",
+    back: "Back to JISSEKI",
     unavailableTitle: "Review session unavailable",
     unavailableBody:
       "Your session may have expired. Reopen the verification link and request a fresh one-time code.",
@@ -43,7 +43,7 @@ const reviewPageCopy: Record<
       "事実を確認し、公開してよい項目を選んで送信してください。これは好意的レビューの依頼ではなく、事実ベースの企業確認です。",
     submittedTitle: "確認結果を送信しました",
     submittedBodyPrefix: "ありがとうございます。この案件の状態は次のように更新されました:",
-    back: "Proofboardへ戻る",
+    back: "JISSEKIへ戻る",
     unavailableTitle: "レビューセッションを利用できません",
     unavailableBody:
       "セッションの有効期限が切れた可能性があります。確認リンクを開き直し、新しいワンタイムコードを依頼してください。",

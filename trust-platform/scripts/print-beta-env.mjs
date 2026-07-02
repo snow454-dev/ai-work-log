@@ -9,7 +9,7 @@ function secret() {
 const tokenPepper = secret();
 const otpPepper = secret();
 
-console.log(`# Proofboard private beta environment template
+console.log(`# JISSEKI private beta environment template
 # Do not commit real values. Paste these into the deployment provider's
 # encrypted environment-variable settings.
 
@@ -28,5 +28,5 @@ MAIL_TRANSPORT=manual
 # Switch to these when transactional email is verified:
 # MAIL_TRANSPORT=resend
 # RESEND_API_KEY=YOUR_RESEND_API_KEY
-# MAIL_FROM=Proofboard <no-reply@YOUR-VERIFIED-DOMAIN.example>
+# MAIL_FROM=JISSEKI <no-reply@YOUR-VERIFIED-DOMAIN.example>
 `);

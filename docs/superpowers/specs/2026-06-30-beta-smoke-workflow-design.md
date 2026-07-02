@@ -14,7 +14,7 @@ This should not run on every push because normal CI does not have a deployed bet
 
 The workflow will be manually triggered from GitHub Actions with one required input:
 
-- `url`: the deployed app URL, for example `https://proofboard-beta.example.com`
+- `url`: the deployed app URL, for example `https://jisseki-beta.example.com`
 
 It will run:
 

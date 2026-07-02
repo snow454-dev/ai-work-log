@@ -237,7 +237,7 @@ if (mode === "production") {
       "MAIL_FROM is production-ready",
       has("MAIL_FROM") &&
         !/example|localhost|\bYOUR[-_A-Z0-9]*\b/i.test(value("MAIL_FROM")),
-      "Use a verified sender domain, e.g. Proofboard <no-reply@yourdomain.com>.",
+      "Use a verified sender domain, e.g. JISSEKI <no-reply@yourdomain.com>.",
     );
   }
 
@@ -262,7 +262,7 @@ if (mode === "production") {
 }
 
 console.log(
-  `Proofboard beta environment check (${mode})${
+  `JISSEKI beta environment check (${mode})${
     explicitEnvFile ? ` using ${explicitEnvFile}` : ""
   }`,
 );

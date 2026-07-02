@@ -1,5 +1,5 @@
 export const locales = ["en", "ja"] as const;
-export const localeCookieName = "proofboard_locale";
+export const localeCookieName = "jisseki_locale";
 
 export type Locale = (typeof locales)[number];
 

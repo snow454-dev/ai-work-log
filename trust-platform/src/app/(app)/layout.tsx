@@ -48,7 +48,7 @@ export default async function AppLayout({
             href={localizedHref("/dashboard", locale)}
             className="text-sm font-semibold"
           >
-            Proofboard
+            JISSEKI
           </Link>
           <nav aria-label={copy.nav} className="flex items-center gap-4">
             <Link

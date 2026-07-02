@@ -1,11 +1,11 @@
-# Proofboard
+# JISSEKI
 
-Proofboard is a private-beta platform for independent professionals to turn completed client work into company-approved proof and consented reference paths.
+JISSEKI is a private-beta platform for independent professionals to turn completed client work into company-approved proof and consented reference paths.
 
 The core loop is:
 
 1. A professional records a completed engagement.
-2. Proofboard sends a secure verification request to a company-domain email.
+2. JISSEKI sends a secure verification request to a company-domain email.
 3. The company reviewer confirms facts and chooses what may become public.
 4. The professional publishes only approved fields and receives structured reference requests before any company reviewer is contacted again.
 

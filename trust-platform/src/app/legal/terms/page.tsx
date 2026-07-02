@@ -10,9 +10,9 @@ import {
 } from "@/lib/i18n";
 
 export const metadata: Metadata = {
-  title: "Beta Terms | Proofboard",
+  title: "Beta Terms | JISSEKI",
   description:
-    "Private beta terms for using Proofboard to collect company-approved proof and consented reference requests.",
+    "Private beta terms for using JISSEKI to collect company-approved proof and consented reference requests.",
 };
 
 const termsCopy: Record<
@@ -30,15 +30,15 @@ const termsCopy: Record<
     updated: "Last updated June 30, 2026",
     title: "Beta Terms",
     intro:
-      "These beta terms set expectations for invited users testing Proofboard. They are lightweight operating terms for early customer use and should be replaced with counsel-reviewed production terms before a broad public launch.",
+      "These beta terms set expectations for invited users testing JISSEKI. They are lightweight operating terms for early customer use and should be replaced with counsel-reviewed production terms before a broad public launch.",
     sections: [
       {
         title: "Private beta access",
-        body: "Proofboard is currently invitation-only. Access may be limited, changed, paused, or revoked while the product is being tested and hardened.",
+        body: "JISSEKI is currently invitation-only. Access may be limited, changed, paused, or revoked while the product is being tested and hardened.",
       },
       {
         title: "Beta access requests",
-        body: "Submitting a beta access request does not guarantee access, pricing, support, or availability. Proofboard may prioritize requests that fit the current design-partner scope.",
+        body: "Submitting a beta access request does not guarantee access, pricing, support, or availability. JISSEKI may prioritize requests that fit the current design-partner scope.",
       },
       {
         title: "Accurate submissions",
@@ -54,11 +54,11 @@ const termsCopy: Record<
       },
       {
         title: "Acceptable use",
-        body: "Do not submit spam, impersonate another person, probe private reviewer details, overload public forms, upload misleading work claims, or use Proofboard to harass customers, reviewers, prospects, or professionals.",
+        body: "Do not submit spam, impersonate another person, probe private reviewer details, overload public forms, upload misleading work claims, or use JISSEKI to harass customers, reviewers, prospects, or professionals.",
       },
       {
         title: "No professional advice",
-        body: "Proofboard is a workflow and reputation product. It does not provide legal, tax, employment, procurement, or financial advice and does not replace direct contracts or due diligence.",
+        body: "JISSEKI is a workflow and reputation product. It does not provide legal, tax, employment, procurement, or financial advice and does not replace direct contracts or due diligence.",
       },
       {
         title: "Beta availability",
@@ -71,15 +71,15 @@ const termsCopy: Record<
     updated: "最終更新日 2026年6月30日",
     title: "β版利用規約",
     intro:
-      "このβ版利用規約は、招待ユーザーがProofboardを試験利用する際の前提を示すものです。初期顧客利用のための軽量な運用規約であり、広く一般公開する前には専門家レビュー済みの正式規約へ置き換える前提です。",
+      "このβ版利用規約は、招待ユーザーがJISSEKIを試験利用する際の前提を示すものです。初期顧客利用のための軽量な運用規約であり、広く一般公開する前には専門家レビュー済みの正式規約へ置き換える前提です。",
     sections: [
       {
         title: "プライベートβへのアクセス",
-        body: "Proofboardは現在招待制です。プロダクトの検証と改善中は、アクセスが制限、変更、一時停止、または取り消される場合があります。",
+        body: "JISSEKIは現在招待制です。プロダクトの検証と改善中は、アクセスが制限、変更、一時停止、または取り消される場合があります。",
       },
       {
         title: "βアクセス申請",
-        body: "βアクセス申請の送信は、アクセス、価格、サポート、提供可否を保証するものではありません。Proofboardは現在のデザインパートナー範囲に合う申請を優先する場合があります。",
+        body: "βアクセス申請の送信は、アクセス、価格、サポート、提供可否を保証するものではありません。JISSEKIは現在のデザインパートナー範囲に合う申請を優先する場合があります。",
       },
       {
         title: "正確な提出",
@@ -95,11 +95,11 @@ const termsCopy: Record<
       },
       {
         title: "許容される利用",
-        body: "スパム、なりすまし、非公開の確認担当者情報の探索、公開フォームへの過剰送信、誤解を招く実績申告、顧客・確認担当者・見込み顧客・本人への嫌がらせにProofboardを使用しないでください。",
+        body: "スパム、なりすまし、非公開の確認担当者情報の探索、公開フォームへの過剰送信、誤解を招く実績申告、顧客・確認担当者・見込み顧客・本人への嫌がらせにJISSEKIを使用しないでください。",
       },
       {
         title: "専門的助言ではありません",
-        body: "Proofboardはワークフローおよび信用形成のためのプロダクトです。法務、税務、雇用、調達、金融に関する助言を提供するものではなく、直接契約やデューデリジェンスの代替ではありません。",
+        body: "JISSEKIはワークフローおよび信用形成のためのプロダクトです。法務、税務、雇用、調達、金融に関する助言を提供するものではなく、直接契約やデューデリジェンスの代替ではありません。",
       },
       {
         title: "β版の提供状況",
@@ -122,7 +122,7 @@ export default async function TermsPage({
       <div className="mx-auto max-w-3xl px-5 py-8">
         <header className="flex items-center justify-between gap-4">
           <Link href="/" className="text-sm font-semibold">
-            Proofboard
+            JISSEKI
           </Link>
           <div className="flex items-center gap-2">
             <LanguageSwitcher locale={locale} path="/legal/terms" />

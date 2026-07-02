@@ -1,4 +1,4 @@
-# Proofboard MVP readiness
+# JISSEKI MVP readiness
 
 ## Current start line
 

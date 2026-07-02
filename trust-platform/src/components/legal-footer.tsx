@@ -12,13 +12,13 @@ const footerCopy: Record<
   }
 > = {
   en: {
-    notice: "© 2026 Proofboard. Private beta.",
+    notice: "© 2026 JISSEKI. Private beta.",
     business: "AI solutions",
     privacy: "Privacy",
     terms: "Terms",
   },
   ja: {
-    notice: "© 2026 Proofboard. プライベートβ版。",
+    notice: "© 2026 JISSEKI. プライベートβ版。",
     business: "AI導入",
     privacy: "プライバシー",
     terms: "利用規約",

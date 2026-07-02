@@ -56,7 +56,7 @@ const pageCopy: Record<
     badge: "Private beta for AI solution work",
     title: "A reputation layer for AI developers companies can actually trust.",
     intro:
-      "Proofboard turns completed AI projects into company-approved proof. Strong builders earn more from verified outcomes; companies find credible AI engineers without cold-call reference chaos.",
+      "JISSEKI turns completed AI projects into company-approved proof. Strong builders earn more from verified outcomes; companies find credible AI engineers without cold-call reference chaos.",
     primaryCta: "Start beta",
     secondaryCta: "View proof demo",
     developerTitle: "For AI developers",
@@ -67,7 +67,7 @@ const pageCopy: Record<
       "Evaluate AI engineers through verified work history and consented reference paths before you spend budget on a risky engagement.",
     marketTitle: "Why this can scale",
     marketBody:
-      "Like search or social ranking rewards strong content, Proofboard is designed to reward verified AI work. Unverified claims stay weak; company-approved outcomes become discoverable proof.",
+      "Like search or social ranking rewards strong content, JISSEKI is designed to reward verified AI work. Unverified claims stay weak; company-approved outcomes become discoverable proof.",
     businessTitle: "Business-use validation",
     businessChecks: [
       "AI developers get a repeatable way to raise close rates and pricing with verified outcomes.",
@@ -77,7 +77,7 @@ const pageCopy: Record<
     ],
     securityTitle: "Why the beta security posture is acceptable",
     securityIntro:
-      "No beta system should be called risk-free. For a controlled cohort, Proofboard reduces the main abuse and privacy risks with these product and technical controls:",
+      "No beta system should be called risk-free. For a controlled cohort, JISSEKI reduces the main abuse and privacy risks with these product and technical controls:",
     securityReasons: [
       {
         title: "Company-domain verification",
@@ -106,7 +106,7 @@ const pageCopy: Record<
     ],
     caveatTitle: "Not yet open-public-launch ready",
     caveatBody:
-      "Before broad launch, Proofboard still needs counsel-reviewed terms, production monitoring, abuse operations, support SLAs, and security review. For known design partners, the current controls are appropriate for a small beta.",
+      "Before broad launch, JISSEKI still needs counsel-reviewed terms, production monitoring, abuse operations, support SLAs, and security review. For known design partners, the current controls are appropriate for a small beta.",
     pricingTitle: "Simple beta offer",
     pricingBody:
       "Start with one verified AI project and one friendly company reviewer. Keep the cohort small until the reference loop is proven.",
@@ -139,7 +139,7 @@ const pageCopy: Record<
     ],
     finalTitle: "The goal is a cleaner AI services market.",
     finalBody:
-      "Great AI builders should become easier to find. Weak claims should become harder to sell. Proofboard is the simple trust layer between those two outcomes.",
+      "Great AI builders should become easier to find. Weak claims should become harder to sell. JISSEKI is the simple trust layer between those two outcomes.",
   },
   ja: {
     signIn: "β導入を開始",
@@ -147,7 +147,7 @@ const pageCopy: Record<
     badge: "AIソリューション実績のプライベートβ",
     title: "企業が本当に信頼できるAI開発者を見つけるための信用基盤。",
     intro:
-      "Proofboardは、完了したAI開発・AI導入案件を企業承認済みの実績に変えます。質の高いAI開発者は収益を上げやすくなり、企業は信頼できるAIエンジニアを見つけやすくなります。",
+      "JISSEKIは、完了したAI開発・AI導入案件を企業承認済みの実績に変えます。質の高いAI開発者は収益を上げやすくなり、企業は信頼できるAIエンジニアを見つけやすくなります。",
     primaryCta: "β導入を開始",
     secondaryCta: "実績デモを見る",
     developerTitle: "AI開発者側の価値",
@@ -158,7 +158,7 @@ const pageCopy: Record<
       "発注前に、会社ドメインで確認された実績と、同意に基づく紹介ルートを見て、AIエンジニア選定の失敗リスクを下げられます。",
     marketTitle: "伸びる設計",
     marketBody:
-      "Google検索やInstagram、Threadsで質の高いコンテンツが注目されるように、Proofboardでは検証済みのAI実績が信用として蓄積されます。未検証の主張は弱くなり、企業承認済みの成果が見つかりやすくなります。",
+      "Google検索やInstagram、Threadsで質の高いコンテンツが注目されるように、JISSEKIでは検証済みのAI実績が信用として蓄積されます。未検証の主張は弱くなり、企業承認済みの成果が見つかりやすくなります。",
     businessTitle: "ビジネス利用の検証",
     businessChecks: [
       "AI開発者は、検証済み成果により受注率・単価・紹介獲得を上げる導線を持てます。",
@@ -230,7 +230,7 @@ const pageCopy: Record<
     ],
     finalTitle: "目指すのは、より健全なAIサービス市場です。",
     finalBody:
-      "優れたAI開発者は見つかりやすく、弱い自己申告は売れにくくなる。その間に入るシンプルな信用レイヤーがProofboardです。",
+      "優れたAI開発者は見つかりやすく、弱い自己申告は売れにくくなる。その間に入るシンプルな信用レイヤーがJISSEKIです。",
   },
 };
 
@@ -243,8 +243,8 @@ export async function generateMetadata({
   const copy = pageCopy[locale];
   const title =
     locale === "ja"
-      ? "AI開発者・企業向け信用基盤 | Proofboard"
-      : "AI developer reputation and company buyer trust | Proofboard";
+      ? "AI開発者・企業向け信用基盤 | JISSEKI"
+      : "AI developer reputation and company buyer trust | JISSEKI";
 
   return {
     title,
@@ -270,7 +270,7 @@ export default async function AiSolutionsPage({
       <div className="mx-auto max-w-6xl px-5 py-8">
         <header className="flex items-center justify-between gap-4">
           <Link href={localizedHref("/", locale)} className="text-sm font-semibold">
-            Proofboard
+            JISSEKI
           </Link>
           <div className="flex items-center gap-2">
             <LanguageSwitcher locale={locale} path="/ai-solutions" />

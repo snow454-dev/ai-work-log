@@ -128,7 +128,7 @@ async function submitWithReceipt(
   await getEmailTransport().send(
     verificationReceipt({
       to: context.reviewerEmail,
-      professionalName: "Proofboard",
+      professionalName: "JISSEKI",
       projectTitle: context.projectTitle,
       actionUrl: `${env.APP_URL}/verification-receipt/${result.verificationId}?token=${encodeURIComponent(
         receiptToken,

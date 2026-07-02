@@ -66,7 +66,7 @@ const verificationReviewCopy: Record<
     metricAccurate: "The outcome metric is accurate",
     referenceTitle: "Reference preference",
     referenceDescription:
-      "This is separate from whether the facts are accurate. Proofboard never exposes your email publicly.",
+      "This is separate from whether the facts are accurate. JISSEKI never exposes your email publicly.",
     rehireLabel: "Would you work with this professional again?",
     yes: "Yes",
     maybe: "Maybe",
@@ -76,7 +76,7 @@ const verificationReviewCopy: Record<
     referenceOnly: "Reference requests only; do not publish as proof",
     notNow: "Not now",
     openToReferenceRequests:
-      "I am open to structured future reference requests through Proofboard",
+      "I am open to structured future reference requests through JISSEKI",
     attributionTitle: "Optional attribution",
     attributionDescription:
       "Leave these blank if you do not want your name or title shown.",
@@ -113,7 +113,7 @@ const verificationReviewCopy: Record<
     metricAccurate: "成果指標は正しい",
     referenceTitle: "紹介・推薦の希望",
     referenceDescription:
-      "事実が正しいかどうかとは別の設定です。Proofboardがあなたのメールアドレスを公開することはありません。",
+      "事実が正しいかどうかとは別の設定です。JISSEKIがあなたのメールアドレスを公開することはありません。",
     rehireLabel: "このプロフェッショナルとまた仕事をしたいですか？",
     yes: "はい",
     maybe: "場合による",
@@ -123,7 +123,7 @@ const verificationReviewCopy: Record<
     referenceOnly: "紹介依頼のみ可。公開実績としては掲載しない",
     notNow: "今回は許可しない",
     openToReferenceRequests:
-      "Proofboard経由の構造化された将来の紹介依頼を受け付けてもよい",
+      "JISSEKI経由の構造化された将来の紹介依頼を受け付けてもよい",
     attributionTitle: "任意の署名情報",
     attributionDescription:
       "氏名や役職を表示したくない場合は空欄のままで構いません。",

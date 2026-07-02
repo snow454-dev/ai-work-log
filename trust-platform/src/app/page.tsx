@@ -82,7 +82,7 @@ export default async function Home({
     <main lang={locale} className="min-h-dvh bg-zinc-950 text-white">
       <div className="mx-auto flex min-h-dvh max-w-6xl flex-col px-5 py-8">
         <header className="flex items-center justify-between">
-          <p className="text-sm font-semibold">Proofboard</p>
+          <p className="text-sm font-semibold">JISSEKI</p>
           <div className="flex items-center gap-3">
             <LanguageSwitcher locale={locale} path="/" variant="dark" />
             <Link

@@ -14,7 +14,7 @@ const optionalText = (max: number) =>
 
 const betaAccessRequestSchema = z.object({
   intent: z.enum(betaAccessIntents, {
-    error: "Choose how you want to use Proofboard.",
+    error: "Choose how you want to use JISSEKI.",
   }),
   requesterName: z
     .string({ error: "Your name is required." })

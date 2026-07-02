@@ -10,9 +10,9 @@ import {
 } from "@/lib/i18n";
 
 export const metadata: Metadata = {
-  title: "Beta Privacy Notice | Proofboard",
+  title: "Beta Privacy Notice | JISSEKI",
   description:
-    "How Proofboard handles beta access, profile, project, company verification, and reference request data during the private beta.",
+    "How JISSEKI handles beta access, profile, project, company verification, and reference request data during the private beta.",
 };
 
 const privacyCopy: Record<
@@ -30,7 +30,7 @@ const privacyCopy: Record<
     updated: "Last updated June 30, 2026",
     title: "Beta Privacy Notice",
     intro:
-      "Proofboard helps independent professionals turn completed client work into company-approved proof and consented reference paths. This notice explains the data handling model for the private beta. It is intended for early customer testing and should be reviewed by counsel before broad public launch.",
+      "JISSEKI helps independent professionals turn completed client work into company-approved proof and consented reference paths. This notice explains the data handling model for the private beta. It is intended for early customer testing and should be reviewed by counsel before broad public launch.",
     sections: [
       {
         title: "What we collect",
@@ -50,7 +50,7 @@ const privacyCopy: Record<
       },
       {
         title: "Sharing and processors",
-        body: "During beta, Proofboard may use infrastructure and email providers to host the product, store data, deliver transactional messages, and monitor reliability. We do not sell personal data.",
+        body: "During beta, JISSEKI may use infrastructure and email providers to host the product, store data, deliver transactional messages, and monitor reliability. We do not sell personal data.",
       },
       {
         title: "Retention and deletion",
@@ -67,7 +67,7 @@ const privacyCopy: Record<
     updated: "最終更新日 2026年6月30日",
     title: "β版プライバシー通知",
     intro:
-      "Proofboardは、個人事業者・フリーランスが完了した顧客案件を、企業承認済みの実績と同意に基づく紹介ルートに変えるためのサービスです。この通知はプライベートβにおけるデータ取扱いの考え方を説明するものです。正式公開前には専門家によるレビューを前提とします。",
+      "JISSEKIは、個人事業者・フリーランスが完了した顧客案件を、企業承認済みの実績と同意に基づく紹介ルートに変えるためのサービスです。この通知はプライベートβにおけるデータ取扱いの考え方を説明するものです。正式公開前には専門家によるレビューを前提とします。",
     sections: [
       {
         title: "収集する情報",
@@ -87,7 +87,7 @@ const privacyCopy: Record<
       },
       {
         title: "共有先と処理業者",
-        body: "β期間中、Proofboardはホスティング、データ保存、メール配信、信頼性監視のためにインフラ事業者やメール事業者を利用する場合があります。個人データを販売することはありません。",
+        body: "β期間中、JISSEKIはホスティング、データ保存、メール配信、信頼性監視のためにインフラ事業者やメール事業者を利用する場合があります。個人データを販売することはありません。",
       },
       {
         title: "保持と削除",
@@ -114,7 +114,7 @@ export default async function PrivacyPage({
       <div className="mx-auto max-w-3xl px-5 py-8">
         <header className="flex items-center justify-between gap-4">
           <Link href="/" className="text-sm font-semibold">
-            Proofboard
+            JISSEKI
           </Link>
           <div className="flex items-center gap-2">
             <LanguageSwitcher locale={locale} path="/legal/privacy" />

@@ -119,7 +119,7 @@ const profileCopy: Record<
     verifiedOutcome: "Verified outcome",
     referencePathTitle: "Structured reference path",
     referencePathBody:
-      "The company reviewer allowed future reference requests to be routed through Proofboard. Reviewer contact details stay private unless a future request is explicitly accepted.",
+      "The company reviewer allowed future reference requests to be routed through JISSEKI. Reviewer contact details stay private unless a future request is explicitly accepted.",
     referenceCta: "Request reference path",
     reviewerDetails: "Reviewer-approved reference details",
   },
@@ -155,7 +155,7 @@ const profileCopy: Record<
     verifiedOutcome: "検証済み成果",
     referencePathTitle: "構造化された紹介依頼ルート",
     referencePathBody:
-      "企業の確認担当者は、Proofboard経由の将来的な紹介依頼を許可しています。今後の依頼が明示的に承認されるまで、確認担当者の連絡先は非公開です。",
+      "企業の確認担当者は、JISSEKI経由の将来的な紹介依頼を許可しています。今後の依頼が明示的に承認されるまで、確認担当者の連絡先は非公開です。",
     referenceCta: "紹介依頼を送る",
     reviewerDetails: "確認担当者が承認した紹介情報",
   },
@@ -182,7 +182,7 @@ export default async function PublicProfilePage({
       <div className="mx-auto max-w-6xl px-5 py-8">
         <header className="flex items-center justify-between gap-4">
           <Link href="/" className="text-sm font-semibold text-zinc-950">
-            Proofboard
+            JISSEKI
           </Link>
           <div className="flex items-center gap-2">
             <LanguageSwitcher locale={locale} path={`/p/${profile.slug}`} />

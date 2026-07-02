@@ -104,7 +104,7 @@ export async function GET() {
   return Response.json(
     {
       ok,
-      service: "proofboard",
+      service: "jisseki",
       checkedAt: new Date().toISOString(),
       environment,
       commit: commitSha(),

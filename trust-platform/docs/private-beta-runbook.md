@@ -1,4 +1,4 @@
-# Proofboard private beta runbook
+# JISSEKI private beta runbook
 
 This runbook is for the first controlled beta with known professionals and known company reviewers. It assumes the product is not yet ready for open public launch.
 

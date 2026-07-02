@@ -1,5 +1,5 @@
 export const betaAccessDeniedMessage =
-  "This private beta is invite-only. Ask the Proofboard team for access.";
+  "This private beta is invite-only. Ask the JISSEKI team for access.";
 
 export function parseBetaAllowedEmails(
   value?: string | null,

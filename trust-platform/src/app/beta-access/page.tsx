@@ -40,7 +40,7 @@ const betaAccessPageCopy: Record<
   en: {
     signIn: "Already invited? Sign in",
     badge: "Private beta access",
-    title: "Request access to the Proofboard beta.",
+    title: "Request access to the JISSEKI beta.",
     intro:
       "Tell us whether you are an AI developer or a company buyer, then start with one real AI solution workflow. We keep the cohort small so the trust loop stays safe and useful.",
     successTitle: "Request received",
@@ -65,7 +65,7 @@ const betaAccessPageCopy: Record<
   ja: {
     signIn: "招待済みの方はログイン",
     badge: "プライベートβアクセス",
-    title: "Proofboardのβアクセスを申請する。",
+    title: "JISSEKIのβアクセスを申請する。",
     intro:
       "AI開発者として使うのか、企業側として使うのかを教えてください。まずは実際のAIソリューション案件1件から始め、信用ループを小さく安全に検証します。",
     successTitle: "申請を受け付けました",
@@ -100,8 +100,8 @@ export async function generateMetadata({
   return {
     title:
       locale === "ja"
-        ? "βアクセス申請 | Proofboard"
-        : "Request Beta Access | Proofboard",
+        ? "βアクセス申請 | JISSEKI"
+        : "Request Beta Access | JISSEKI",
     description: copy.intro,
   };
 }
@@ -140,7 +140,7 @@ export default async function BetaAccessPage({
       <div className="mx-auto max-w-6xl px-5 py-8">
         <header className="flex items-center justify-between gap-4">
           <Link href={localizedHref("/", locale)} className="text-sm font-semibold">
-            Proofboard
+            JISSEKI
           </Link>
           <div className="flex items-center gap-2">
             <LanguageSwitcher locale={locale} path="/beta-access" />

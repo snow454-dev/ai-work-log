@@ -45,7 +45,7 @@ const referenceRequestFormCopy: Record<
     consent:
       "I understand this request is shared with the professional first. Reviewer contact details are not exposed or contacted directly by this form.",
     helpPrefix:
-      "Proofboard stores this request so the professional can review the next step. Beta use is subject to the",
+      "JISSEKI stores this request so the professional can review the next step. Beta use is subject to the",
     privacy: "Privacy Notice",
     terms: "Terms",
     helpSuffix: ".",
@@ -66,7 +66,7 @@ const referenceRequestFormCopy: Record<
     consent:
       "この依頼はまず本人に共有され、確認担当者の連絡先はこのフォームで公開・直接連絡されないことを理解しています。",
     helpPrefix:
-      "Proofboardは、本人が次のステップを確認できるようこの依頼を保存します。β利用には",
+      "JISSEKIは、本人が次のステップを確認できるようこの依頼を保存します。β利用には",
     privacy: "プライバシー通知",
     terms: "利用規約",
     helpSuffix: "が適用されます。",
