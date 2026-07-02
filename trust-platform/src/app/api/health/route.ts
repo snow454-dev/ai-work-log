@@ -19,7 +19,7 @@ function commitSha(): string | null {
 function configurationCheck():
   | {
       ok: true;
-      mailTransport: "smtp" | "resend";
+      mailTransport: "smtp" | "resend" | "manual";
       betaAllowlistConfigured: boolean;
     }
   | {
@@ -56,6 +56,14 @@ function configurationCheck():
         if (!process.env.SMTP_PORT) {
           missingOrInvalid.add("SMTP_PORT");
         }
+      }
+
+      if (
+        (process.env.MAIL_TRANSPORT === "resend" ||
+          process.env.MAIL_TRANSPORT === "smtp") &&
+        !process.env.MAIL_FROM
+      ) {
+        missingOrInvalid.add("MAIL_FROM");
       }
 
       return {

@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 
 import {
+  openManualReviewerSession,
   reviewerSessionCookieName,
   setReviewerOtp,
   verifyReviewerOtp,
@@ -105,6 +106,50 @@ export async function verifyReviewerOtpAction(
     return {
       ok: false,
       message: "That code is invalid or expired. Request a new code.",
+    };
+  }
+
+  const cookieStore = await cookies();
+  cookieStore.set(reviewerSessionCookieName(requestId), sessionToken, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "strict",
+    path: `/verify/${requestId}`,
+    maxAge: 60 * 30,
+  });
+
+  redirect(`/verify/${requestId}/review`);
+}
+
+export async function continueManualReviewerSession(
+  requestId: string,
+  invitationToken: string,
+  prevState: ReviewerAuthState,
+  formData: FormData,
+): Promise<ReviewerAuthState> {
+  void prevState;
+  void formData;
+
+  if (process.env.MAIL_TRANSPORT !== "manual") {
+    return {
+      ok: false,
+      message: "Manual review mode is not enabled.",
+    };
+  }
+
+  const sessionToken = createOpaqueToken();
+
+  try {
+    await openManualReviewerSession({
+      requestId,
+      invitationTokenHash: hashOpaqueToken(invitationToken),
+      sessionHash: hashOpaqueToken(sessionToken),
+      sessionExpiresAt: thirtyMinutesFromNow(),
+    });
+  } catch {
+    return {
+      ok: false,
+      message: "This verification link is invalid or expired.",
     };
   }
 

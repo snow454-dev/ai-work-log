@@ -29,14 +29,13 @@ Required:
 - `OTP_PEPPER`
 - `BETA_ALLOWED_EMAILS`
 - `MAIL_TRANSPORT`
-- `MAIL_FROM`
 
 Production beta should use:
 
-- `MAIL_TRANSPORT=resend`
-- `RESEND_API_KEY`
+- `MAIL_TRANSPORT=manual` for the first simple private beta
+- `MAIL_TRANSPORT=resend` plus `RESEND_API_KEY` when transactional email is verified
 - `APP_URL=https://...`
-- a verified sender in `MAIL_FROM`
+- a verified sender in `MAIL_FROM` when `MAIL_TRANSPORT=resend`
 - unique random values for both peppers
 - `BETA_ALLOWED_EMAILS` set to exact professional account emails for the first cohort
 
@@ -132,16 +131,18 @@ Security notes:
 
 ## Email setup
 
-For beta, use a verified transactional email provider account.
+For the simplest private beta, set `MAIL_TRANSPORT=manual`. The app will show a one-time company verification link to the authenticated professional, who must send it to the company reviewer through a trusted company channel.
+
+For email-enabled beta, use a verified transactional email provider account.
 
 Required smoke checks:
 
-- Professional sign-in magic link is delivered.
-- Company verification invitation is delivered.
-- Company OTP email is delivered.
-- Verification receipt email is delivered and its receipt link opens without exposing private project details.
+- Professional sign-in magic link is delivered by Supabase.
+- Manual mode: company verification link can be generated and copied by the professional.
+- Resend mode: company verification invitation, OTP email, and receipt email are delivered.
+- Verification receipt link opens without exposing private project details.
 
-Do not invite external company reviewers while `MAIL_TRANSPORT=smtp` or `MAIL_FROM` uses an example domain.
+Do not invite external company reviewers while `MAIL_TRANSPORT=smtp` or `MAIL_FROM` uses an example domain. Use `manual` only for small private beta cohorts where the reviewer link is shared through an existing trusted channel.
 
 ## Deployment smoke test
 

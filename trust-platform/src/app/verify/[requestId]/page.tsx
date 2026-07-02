@@ -6,6 +6,7 @@ import {
   openReviewerInvitation,
   type ReviewerInvitation,
 } from "@/data/reviewer-auth";
+import { env } from "@/lib/env";
 import { localizedHref, type Locale, type LocaleSearchParams } from "@/lib/i18n";
 import { resolveServerLocale } from "@/lib/i18n-server";
 import { hashOpaqueToken } from "@/lib/security/tokens";
@@ -80,6 +81,7 @@ export default async function VerifyInvitationPage({
   }
 
   const languagePath = `/verify/${requestId}?token=${encodeURIComponent(token)}`;
+  const manualMode = env.MAIL_TRANSPORT === "manual";
 
   return (
     <main className="min-h-dvh bg-zinc-50 px-5 py-10 text-zinc-950">
@@ -113,6 +115,7 @@ export default async function VerifyInvitationPage({
             invitation={invitation}
             token={token}
             locale={locale}
+            manualMode={manualMode}
           />
         </div>
       </div>

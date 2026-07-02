@@ -23,7 +23,10 @@ OTP_PEPPER=${otpPepper}
 
 BETA_ALLOWED_EMAILS=founder@example.com,design-partner@example.com
 
-MAIL_TRANSPORT=resend
-RESEND_API_KEY=YOUR_RESEND_API_KEY
-MAIL_FROM=Proofboard <no-reply@YOUR-VERIFIED-DOMAIN.example>
+MAIL_TRANSPORT=manual
+
+# Switch to these when transactional email is verified:
+# MAIL_TRANSPORT=resend
+# RESEND_API_KEY=YOUR_RESEND_API_KEY
+# MAIL_FROM=Proofboard <no-reply@YOUR-VERIFIED-DOMAIN.example>
 `);

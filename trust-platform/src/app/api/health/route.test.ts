@@ -125,4 +125,24 @@ describe("/api/health", () => {
       allowlistConfigured: true,
     });
   });
+
+  it("passes production health in manual beta link mode without email provider secrets", async () => {
+    setCompleteEnv({
+      VERCEL_ENV: "production",
+      MAIL_TRANSPORT: "manual",
+      RESEND_API_KEY: undefined,
+      MAIL_FROM: undefined,
+      BETA_ALLOWED_EMAILS: "founder@proofboard.test",
+    });
+
+    const response = await GET();
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body.ok).toBe(true);
+    expect(body.checks.configuration).toMatchObject({
+      ok: true,
+      mailTransport: "manual",
+    });
+  });
 });

@@ -18,6 +18,10 @@ import { createOpaqueToken, hashOpaqueToken } from "@/lib/security/tokens";
 export type VerificationActionState = {
   ok: boolean;
   message: string;
+  deliveryMode?: "email" | "manual";
+  manualInvitationUrl?: string;
+  reviewerEmail?: string;
+  expiresAt?: string;
 };
 
 const INVITATION_TTL_HOURS = 72;
@@ -62,6 +66,18 @@ async function persistThenSend({
   context: VerificationRequestEmailContext;
   isReminder: boolean;
 }): Promise<VerificationActionState> {
+  if (process.env.MAIL_TRANSPORT === "manual") {
+    return {
+      ok: true,
+      deliveryMode: "manual",
+      manualInvitationUrl: invitationUrl(context.id, token),
+      reviewerEmail: context.reviewerEmail,
+      expiresAt: context.expiresAt,
+      message:
+        "Manual verification link created. Copy it and send it to the company reviewer through a trusted channel.",
+    };
+  }
+
   try {
     const delivery = await sendInvitationEmail({ context, token, isReminder });
     await recordVerificationDelivery({
@@ -123,6 +139,14 @@ export async function sendVerificationRequestForm(
   formData: FormData,
 ): Promise<void> {
   await sendVerificationRequest(projectId, formData);
+}
+
+export async function sendVerificationRequestWithState(
+  projectId: string,
+  _prevState: VerificationActionState,
+  formData: FormData,
+): Promise<VerificationActionState> {
+  return sendVerificationRequest(projectId, formData);
 }
 
 export async function sendVerificationReminder(

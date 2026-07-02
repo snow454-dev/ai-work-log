@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { publishProjectEvidence } from "@/app/actions/publication";
-import { sendVerificationRequestForm } from "@/app/actions/verification-requests";
+import { VerificationRequestAction } from "@/components/verification-request-action";
 import { getCurrentUserId } from "@/data/auth";
 import { getProjectForUser } from "@/data/projects";
 import { getProfileForUser } from "@/data/profiles";
@@ -75,7 +75,6 @@ const projectDetailCopy: Record<
     companyVerificationDescription: string;
     readyToSend: string;
     alreadySent: string;
-    sendVerification: string;
     publicationControls: string;
     publicationDescription: string;
     published: string;
@@ -109,7 +108,6 @@ const projectDetailCopy: Record<
       "Next step: send a secure review link to a company-domain email. The reviewer can approve, correct, decline, or limit what becomes public.",
     readyToSend: "Ready to send",
     alreadySent: "Already sent",
-    sendVerification: "Send verification request",
     publicationControls: "Publication controls",
     publicationDescription:
       "Publish a public proof card only after company verification and only with fields the company allowed.",
@@ -143,7 +141,6 @@ const projectDetailCopy: Record<
       "次のステップ: 企業ドメインのメールアドレスへ安全な確認リンクを送ります。確認担当者は承認・修正・辞退、または公開範囲の制限を選べます。",
     readyToSend: "送信可能",
     alreadySent: "送信済み",
-    sendVerification: "確認依頼を送信",
     publicationControls: "公開設定",
     publicationDescription:
       "企業確認後、企業が許可した項目だけを公開実績カードとして掲載できます。",
@@ -285,14 +282,7 @@ export default async function ProjectDetailPage({
           }
           action={
             project.status === "draft" || project.status === "expired" ? (
-              <form action={sendVerificationRequestForm.bind(null, project.id)}>
-                <button
-                  type="submit"
-                  className="mt-4 rounded-full bg-zinc-950 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800 focus:outline-none focus:ring-2 focus:ring-zinc-950 focus:ring-offset-2"
-                >
-                  {copy.sendVerification}
-                </button>
-              </form>
+              <VerificationRequestAction projectId={project.id} locale={locale} />
             ) : null
           }
         />

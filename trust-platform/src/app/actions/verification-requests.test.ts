@@ -53,6 +53,7 @@ const requestContext = {
 describe("sendVerificationRequest", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    process.env.MAIL_TRANSPORT = "smtp";
     mocks.getCurrentUserId.mockResolvedValue("user-1");
     mocks.createOpaqueToken.mockReturnValue("plain-token");
     mocks.hashOpaqueToken.mockReturnValue("hashed-token");
@@ -116,6 +117,22 @@ describe("sendVerificationRequest", () => {
         requestId: requestContext.id,
       }),
     );
+  });
+
+  it("returns a manual invitation link without sending email in manual beta mode", async () => {
+    process.env.MAIL_TRANSPORT = "manual";
+
+    const result = await sendVerificationRequest("project-1");
+
+    expect(result).toMatchObject({
+      ok: true,
+      deliveryMode: "manual",
+      reviewerEmail: "ops@acme.com",
+      manualInvitationUrl:
+        "http://localhost:3000/verify/00000000-0000-4000-8000-000000000001?token=plain-token",
+    });
+    expect(mocks.sendEmail).not.toHaveBeenCalled();
+    expect(mocks.recordVerificationDelivery).not.toHaveBeenCalled();
   });
 });
 

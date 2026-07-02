@@ -129,3 +129,29 @@ export async function verifyReviewerOtp({
 
   return toReviewerSession(z.array(reviewerSessionSchema).parse(data)[0]);
 }
+
+export async function openManualReviewerSession({
+  requestId,
+  invitationTokenHash,
+  sessionHash,
+  sessionExpiresAt,
+}: {
+  requestId: string;
+  invitationTokenHash: string;
+  sessionHash: string;
+  sessionExpiresAt: Date;
+}): Promise<ReviewerSession> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("open_manual_reviewer_session", {
+    p_request_id: requestId,
+    p_invitation_hash: invitationTokenHash,
+    p_session_hash: sessionHash,
+    p_session_expires_at: sessionExpiresAt.toISOString(),
+  });
+
+  if (error) {
+    throw new Error("INVALID_INVITATION");
+  }
+
+  return toReviewerSession(z.array(reviewerSessionSchema).parse(data)[0]);
+}

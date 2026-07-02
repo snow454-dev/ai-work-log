@@ -8,13 +8,24 @@ const serverEnvSchema = z
     TOKEN_PEPPER: z.string().min(32),
     OTP_PEPPER: z.string().min(32),
     BETA_ALLOWED_EMAILS: z.string().optional(),
-    MAIL_TRANSPORT: z.enum(["smtp", "resend"]),
+    MAIL_TRANSPORT: z.enum(["smtp", "resend", "manual"]),
     SMTP_HOST: z.string().optional(),
     SMTP_PORT: z.coerce.number().int().positive().optional(),
     RESEND_API_KEY: z.string().optional(),
-    MAIL_FROM: z.string().min(1),
+    MAIL_FROM: z.string().optional(),
   })
   .superRefine((value, ctx) => {
+    if (
+      (value.MAIL_TRANSPORT === "smtp" || value.MAIL_TRANSPORT === "resend") &&
+      !value.MAIL_FROM
+    ) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["MAIL_FROM"],
+        message: "MAIL_FROM is required for email transport",
+      });
+    }
+
     if (
       value.MAIL_TRANSPORT === "smtp" &&
       (!value.SMTP_HOST || !value.SMTP_PORT)

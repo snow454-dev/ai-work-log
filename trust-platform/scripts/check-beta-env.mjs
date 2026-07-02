@@ -135,7 +135,6 @@ const required = [
   "TOKEN_PEPPER",
   "OTP_PEPPER",
   "MAIL_TRANSPORT",
-  "MAIL_FROM",
 ];
 
 const missing = required.filter((name) => !has(name));
@@ -183,17 +182,33 @@ if (mailTransport === "smtp") {
     smtpMissing.length === 0,
     smtpMissing.length ? `Missing: ${smtpMissing.join(", ")}` : undefined,
   );
+  addCheck(
+    "SMTP transport has sender",
+    has("MAIL_FROM") && !isPlaceholder(value("MAIL_FROM")),
+    "Set MAIL_FROM for SMTP email delivery.",
+  );
 } else if (mailTransport === "resend") {
   addCheck(
     "Resend transport has API key",
     has("RESEND_API_KEY") && !isPlaceholder(value("RESEND_API_KEY")),
     "Set RESEND_API_KEY for production transactional email.",
   );
+  addCheck(
+    "Resend transport has sender",
+    has("MAIL_FROM") && !isPlaceholder(value("MAIL_FROM")),
+    "Set MAIL_FROM to a verified sender domain.",
+  );
+} else if (mailTransport === "manual") {
+  addCheck(
+    "manual beta link mode is explicit",
+    true,
+    "Manual mode skips transactional email and shows one-time invitation links to authenticated professionals.",
+  );
 } else {
   addCheck(
     "mail transport is valid",
     false,
-    "MAIL_TRANSPORT must be either smtp or resend.",
+    "MAIL_TRANSPORT must be smtp, resend, or manual.",
   );
 }
 
@@ -212,17 +227,19 @@ if (mode === "production") {
   );
 
   addCheck(
-    "production email uses Resend",
-    mailTransport === "resend",
-    "Use MAIL_TRANSPORT=resend before inviting external company reviewers.",
+    "production beta mail mode is explicit",
+    mailTransport === "resend" || mailTransport === "manual",
+    "Use MAIL_TRANSPORT=manual for simple private beta or resend for transactional email.",
   );
 
-  addCheck(
-    "MAIL_FROM is production-ready",
-    has("MAIL_FROM") &&
-      !/example|localhost|\bYOUR[-_A-Z0-9]*\b/i.test(value("MAIL_FROM")),
-    "Use a verified sender domain, e.g. Proofboard <no-reply@yourdomain.com>.",
-  );
+  if (mailTransport !== "manual") {
+    addCheck(
+      "MAIL_FROM is production-ready",
+      has("MAIL_FROM") &&
+        !/example|localhost|\bYOUR[-_A-Z0-9]*\b/i.test(value("MAIL_FROM")),
+      "Use a verified sender domain, e.g. Proofboard <no-reply@yourdomain.com>.",
+    );
+  }
 
   const allowedEmails = allowedEmailList();
   const invalidAllowedEmails = allowedEmails.filter(

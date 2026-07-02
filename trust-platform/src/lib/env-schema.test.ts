@@ -26,4 +26,17 @@ describe("parseServerEnv", () => {
       }),
     ).toMatchObject({ MAIL_TRANSPORT: "smtp", SMTP_PORT: 54325 });
   });
+
+  it("accepts manual beta link mode without sender configuration", () => {
+    expect(
+      parseServerEnv({
+        NEXT_PUBLIC_SUPABASE_URL: "https://project.supabase.co",
+        NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: "publishable_live",
+        APP_URL: "https://proofboard.test",
+        TOKEN_PEPPER: "0123456789abcdef0123456789abcdef",
+        OTP_PEPPER: "abcdef0123456789abcdef0123456789",
+        MAIL_TRANSPORT: "manual",
+      }),
+    ).toMatchObject({ MAIL_TRANSPORT: "manual" });
+  });
 });
