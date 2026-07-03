@@ -198,6 +198,47 @@ const checks = [
     },
   },
   {
+    name: "Japanese developer page renders",
+    path: "/developers?lang=ja",
+    validate: async (response) => {
+      if (!response.ok) {
+        return `Expected HTTP 200, got ${response.status}`;
+      }
+
+      const body = await response.text();
+      const protectionError = deploymentProtectionError(body);
+
+      if (protectionError) {
+        return protectionError;
+      }
+
+      return body.includes("AI開発者向け") &&
+        body.includes("AI開発者として申請")
+        ? undefined
+        : "Expected Japanese developer landing content";
+    },
+  },
+  {
+    name: "Japanese company page renders",
+    path: "/companies?lang=ja",
+    validate: async (response) => {
+      if (!response.ok) {
+        return `Expected HTTP 200, got ${response.status}`;
+      }
+
+      const body = await response.text();
+      const protectionError = deploymentProtectionError(body);
+
+      if (protectionError) {
+        return protectionError;
+      }
+
+      return body.includes("企業向け") && body.includes("企業として申請")
+        ? undefined
+        : "Expected Japanese company landing content";
+    },
+  },
+  {
     name: "Japanese beta access request page renders",
     path: "/beta-access?intent=company&lang=ja",
     validate: async (response) => {
