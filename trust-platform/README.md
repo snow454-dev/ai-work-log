@@ -24,6 +24,8 @@ Open:
 - App: `http://localhost:3000`
 - Japanese UI: `http://localhost:3000/?lang=ja`
 - Demo: `http://localhost:3000/demo?lang=ja`
+- AI developer beta page: `http://localhost:3000/developers?lang=ja`
+- Company buyer beta page: `http://localhost:3000/companies?lang=ja`
 - Health check: `http://localhost:3000/api/health`
 
 After `npm run db:start`, copy Supabase local keys from `supabase status` into `.env.local`.

@@ -29,6 +29,8 @@ const betaAccessPageCopy: Record<
     intro: string;
     successTitle: string;
     successBody: string;
+    successPrimaryCta: string;
+    successSecondaryCta: string;
     formTitle: string;
     formIntro: string;
     securityTitle: string;
@@ -46,6 +48,8 @@ const betaAccessPageCopy: Record<
     successTitle: "Request received",
     successBody:
       "Thanks. The beta team can now review your request and follow up through the work email you provided.",
+    successPrimaryCta: "Sign in if invited",
+    successSecondaryCta: "Back to overview",
     formTitle: "Start with one serious use case",
     formIntro:
       "No open checkout yet. This request is the controlled purchase-intent path for design partners and early AI builders.",
@@ -71,6 +75,8 @@ const betaAccessPageCopy: Record<
     successTitle: "申請を受け付けました",
     successBody:
       "ありがとうございます。βチームが内容を確認し、入力された仕事用メールへ連絡できる状態になりました。",
+    successPrimaryCta: "招待済みならログイン",
+    successSecondaryCta: "総合ページへ戻る",
     formTitle: "最初の本気のユースケースから始める",
     formIntro:
       "まだオープンな即時決済ではありません。この申請が、デザインパートナーと初期AI開発者向けの管理された購入意思表示ルートです。",
@@ -171,28 +177,61 @@ export default async function BetaAccessPage({
 
           <section className="rounded-[2rem] border border-zinc-300 bg-white p-6 shadow-sm md:p-8">
             {submitted ? (
-              <div className="mb-6 rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
-                <h2 className="text-lg font-semibold text-emerald-950">
-                  {copy.successTitle}
-                </h2>
-                <p className="mt-2 text-sm leading-6 text-emerald-800">
-                  {copy.successBody}
-                </p>
-              </div>
-            ) : null}
+              <div className="space-y-6">
+                <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5">
+                  <h2 className="text-2xl font-semibold tracking-tight text-emerald-950">
+                    {copy.successTitle}
+                  </h2>
+                  <p className="mt-3 text-sm leading-6 text-emerald-800">
+                    {copy.successBody}
+                  </p>
+                </div>
 
-            <h2 className="text-3xl font-semibold tracking-tight text-balance">
-              {copy.formTitle}
-            </h2>
-            <p className="mt-3 text-sm leading-7 text-zinc-700 text-pretty">
-              {copy.formIntro}
-            </p>
-            <div className="mt-7">
-              <BetaAccessRequestForm
-                locale={locale}
-                initialIntent={initialIntent}
-              />
-            </div>
+                <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-5">
+                  <h3 className="text-lg font-semibold text-zinc-950">
+                    {copy.nextTitle}
+                  </h3>
+                  <ul className="mt-4 space-y-3 text-sm leading-6 text-zinc-700">
+                    {copy.nextItems.map((item) => (
+                      <li key={item} className="flex gap-2">
+                        <span className="font-semibold text-zinc-950">✓</span>
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                <div className="flex flex-col gap-3 sm:flex-row">
+                  <Link
+                    href={localizedHref("/sign-in", locale)}
+                    className="inline-flex justify-center rounded-full bg-zinc-950 px-5 py-3 text-sm font-semibold text-white hover:bg-zinc-800 focus:outline-none focus:ring-2 focus:ring-zinc-950 focus:ring-offset-2"
+                  >
+                    {copy.successPrimaryCta}
+                  </Link>
+                  <Link
+                    href={localizedHref("/ai-solutions", locale)}
+                    className="inline-flex justify-center rounded-full border border-zinc-300 px-5 py-3 text-sm font-semibold text-zinc-950 hover:bg-zinc-50 focus:outline-none focus:ring-2 focus:ring-zinc-950 focus:ring-offset-2"
+                  >
+                    {copy.successSecondaryCta}
+                  </Link>
+                </div>
+              </div>
+            ) : (
+              <>
+                <h2 className="text-3xl font-semibold tracking-tight text-balance">
+                  {copy.formTitle}
+                </h2>
+                <p className="mt-3 text-sm leading-7 text-zinc-700 text-pretty">
+                  {copy.formIntro}
+                </p>
+                <div className="mt-7">
+                  <BetaAccessRequestForm
+                    locale={locale}
+                    initialIntent={initialIntent}
+                  />
+                </div>
+              </>
+            )}
           </section>
         </section>
 

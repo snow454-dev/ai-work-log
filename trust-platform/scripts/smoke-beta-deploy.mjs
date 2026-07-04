@@ -260,6 +260,27 @@ const checks = [
         : "Expected Japanese beta access request content";
     },
   },
+  {
+    name: "Japanese beta access submitted page renders",
+    path: "/beta-access?intent=company&submitted=1&lang=ja",
+    validate: async (response) => {
+      if (!response.ok) {
+        return `Expected HTTP 200, got ${response.status}`;
+      }
+
+      const body = await response.text();
+      const protectionError = deploymentProtectionError(body);
+
+      if (protectionError) {
+        return protectionError;
+      }
+
+      return body.includes("申請を受け付けました") &&
+        body.includes("招待済みならログイン")
+        ? undefined
+        : "Expected Japanese beta access submitted content";
+    },
+  },
 ];
 
 console.log(`JISSEKI private beta smoke test: ${baseUrl}`);
