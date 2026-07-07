@@ -172,6 +172,8 @@ After deployment:
 
 Start with 3-5 known professionals. Ask each to bring one company reviewer who already expects the request.
 
+Use [first-cohort-launch.md](first-cohort-launch.md) as the operational checklist for reviewing access requests, adding allowlisted emails, sending invite messages, and running the first production loop.
+
 Good first users:
 
 - completed B2B projects,

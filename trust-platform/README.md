@@ -78,7 +78,7 @@ After deployment, you can also run the manual GitHub Actions workflow `Trust Pla
 8. Run `npm run beta:release-check -- --url https://YOUR-DEPLOYED-APP`, or trigger the `Trust Platform Beta Smoke` GitHub Actions workflow with the deployed URL.
 9. Run the first real smoke test with a friendly company-domain reviewer email.
 
-See [docs/private-beta-runbook.md](docs/private-beta-runbook.md) for the full beta launch runbook.
+See [docs/private-beta-runbook.md](docs/private-beta-runbook.md) for the full beta launch runbook and [docs/first-cohort-launch.md](docs/first-cohort-launch.md) for the first 3-5 user invite process.
 
 ## Safety notes
 
