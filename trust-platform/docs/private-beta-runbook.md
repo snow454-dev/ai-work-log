@@ -28,6 +28,7 @@ Required:
 - `TOKEN_PEPPER`
 - `OTP_PEPPER`
 - `BETA_ALLOWED_EMAILS`
+- Optional additive invite list: `BETA_ADDITIONAL_ALLOWED_EMAILS`
 - `MAIL_TRANSPORT`
 
 Production beta should use:
@@ -109,6 +110,8 @@ BETA_ALLOWED_EMAILS=founder@example.com,design-partner@example.com
 
 When this variable is set, only listed professionals can request sign-in magic links. Company reviewers are not blocked by this setting because they use scoped verification links and OTP.
 
+If the current encrypted `BETA_ALLOWED_EMAILS` value cannot be read locally, add new cohort emails to `BETA_ADDITIONAL_ALLOWED_EMAILS` instead of replacing `BETA_ALLOWED_EMAILS`. The app treats both variables as one combined allowlist.
+
 In deployed beta environments, `/api/health` fails when this allowlist is missing. That makes the smoke test catch accidental open signup before customer invitations go out.
 
 ## Beta access request intake
@@ -119,7 +122,7 @@ Operational handling:
 
 1. Review new requests in Supabase using the service-role dashboard or a controlled internal query.
 2. Prioritize requests with one real completed AI solution project or a concrete company buyer need.
-3. If approved, add the requester work email to `BETA_ALLOWED_EMAILS`.
+3. If approved, add the requester work email to `BETA_ALLOWED_EMAILS` or `BETA_ADDITIONAL_ALLOWED_EMAILS`.
 4. Ask the requester to sign in and verify one project before expanding usage.
 5. Mark the request status internally as `reviewing`, `invited`, `declined`, or `closed`.
 

@@ -71,6 +71,7 @@ After deployment, you can also run the manual GitHub Actions workflow `Trust Pla
    - `TOKEN_PEPPER`
    - `OTP_PEPPER`
    - `BETA_ALLOWED_EMAILS`
+   - Optional additive invite list: `BETA_ADDITIONAL_ALLOWED_EMAILS`
    - `MAIL_TRANSPORT=manual` for simple private beta
    - Optional for email-enabled beta: `MAIL_TRANSPORT=resend`, `RESEND_API_KEY`, `MAIL_FROM`
 6. Run `npm run beta:release-check`.

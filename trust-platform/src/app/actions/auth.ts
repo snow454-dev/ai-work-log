@@ -33,6 +33,7 @@ export async function signIn(
     !isEmailAllowedForBeta({
       email: parsed.data.email,
       allowedEmails: env.BETA_ALLOWED_EMAILS,
+      additionalAllowedEmails: env.BETA_ADDITIONAL_ALLOWED_EMAILS,
     })
   ) {
     return { error: betaAccessDeniedMessage };

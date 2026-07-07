@@ -39,4 +39,21 @@ describe("parseServerEnv", () => {
       }),
     ).toMatchObject({ MAIL_TRANSPORT: "manual" });
   });
+
+  it("accepts additive beta allowlist configuration", () => {
+    expect(
+      parseServerEnv({
+        NEXT_PUBLIC_SUPABASE_URL: "https://project.supabase.co",
+        NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: "publishable_live",
+        APP_URL: "https://jisseki.test",
+        TOKEN_PEPPER: "0123456789abcdef0123456789abcdef",
+        OTP_PEPPER: "abcdef0123456789abcdef0123456789",
+        MAIL_TRANSPORT: "manual",
+        BETA_ALLOWED_EMAILS: "founder@example.com",
+        BETA_ADDITIONAL_ALLOWED_EMAILS: "hello@aisupports.cc",
+      }),
+    ).toMatchObject({
+      BETA_ADDITIONAL_ALLOWED_EMAILS: "hello@aisupports.cc",
+    });
+  });
 });

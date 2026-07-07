@@ -43,4 +43,22 @@ describe("isEmailAllowedForBeta", () => {
       }),
     ).toBe(false);
   });
+
+  it("allows additional emails without replacing the primary allowlist", () => {
+    expect(
+      isEmailAllowedForBeta({
+        email: "hello@aisupports.cc",
+        allowedEmails: "alice@example.com",
+        additionalAllowedEmails: "hello@aisupports.cc",
+      }),
+    ).toBe(true);
+
+    expect(
+      isEmailAllowedForBeta({
+        email: "alice@example.com",
+        allowedEmails: "alice@example.com",
+        additionalAllowedEmails: "hello@aisupports.cc",
+      }),
+    ).toBe(true);
+  });
 });

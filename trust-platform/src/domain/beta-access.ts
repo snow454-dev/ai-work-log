@@ -21,11 +21,15 @@ export function parseBetaAllowedEmails(
 export function isEmailAllowedForBeta({
   email,
   allowedEmails,
+  additionalAllowedEmails,
 }: {
   email: string;
   allowedEmails?: string | null;
+  additionalAllowedEmails?: string | null;
 }): boolean {
-  const allowed = parseBetaAllowedEmails(allowedEmails);
+  const allowed = parseBetaAllowedEmails(
+    [allowedEmails, additionalAllowedEmails].filter(Boolean).join(","),
+  );
 
   if (allowed.length === 0) {
     return true;

@@ -14,6 +14,7 @@ function setCompleteEnv(overrides: Record<string, string | undefined> = {}) {
   process.env.RESEND_API_KEY = "re_test_123";
   process.env.MAIL_FROM = "JISSEKI <no-reply@jisseki.test>";
   delete process.env.BETA_ALLOWED_EMAILS;
+  delete process.env.BETA_ADDITIONAL_ALLOWED_EMAILS;
 
   for (const [key, value] of Object.entries(overrides)) {
     if (value === undefined) {
@@ -112,6 +113,24 @@ describe("/api/health", () => {
     setCompleteEnv({
       VERCEL_ENV: "production",
       BETA_ALLOWED_EMAILS: "founder@jisseki.test",
+    });
+
+    const response = await GET();
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body.ok).toBe(true);
+    expect(body.checks.betaAccess).toEqual({
+      ok: true,
+      required: true,
+      allowlistConfigured: true,
+    });
+  });
+
+  it("passes when production beta configuration uses the additive allowlist", async () => {
+    setCompleteEnv({
+      VERCEL_ENV: "production",
+      BETA_ADDITIONAL_ALLOWED_EMAILS: "hello@aisupports.cc",
     });
 
     const response = await GET();

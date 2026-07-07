@@ -8,7 +8,7 @@ Production beta is considered ready to invite the first cohort when all of these
 
 - [ ] `/api/health` returns `ok: true`.
 - [ ] `npm run beta:smoke -- --url https://verified-reputation-platform.vercel.app` passes.
-- [ ] `BETA_ALLOWED_EMAILS` contains only the invited professional account emails.
+- [ ] `BETA_ALLOWED_EMAILS` and `BETA_ADDITIONAL_ALLOWED_EMAILS` contain only invited professional account emails.
 - [ ] Supabase Auth redirect URLs include `https://verified-reputation-platform.vercel.app/auth/confirm`.
 - [ ] The first company reviewer already expects the verification request.
 
@@ -55,7 +55,7 @@ set status = 'reviewing',
 where id = 'REQUEST_ID';
 ```
 
-After adding the requester email to `BETA_ALLOWED_EMAILS`, mark it invited:
+After adding the requester email to `BETA_ALLOWED_EMAILS` or `BETA_ADDITIONAL_ALLOWED_EMAILS`, mark it invited:
 
 ```sql
 update public.beta_access_requests
@@ -76,10 +76,11 @@ where id = 'REQUEST_ID';
 ## Add an invited professional
 
 1. Open Vercel project settings for production environment variables.
-2. Edit `BETA_ALLOWED_EMAILS`.
-3. Add the exact work email used for sign-in.
-4. Redeploy only if the platform requires it for env changes.
-5. Run:
+2. Prefer editing `BETA_ALLOWED_EMAILS` when you know the full current list.
+3. If the encrypted current value is not readable, set or edit `BETA_ADDITIONAL_ALLOWED_EMAILS` instead.
+4. Add the exact work email used for sign-in.
+5. Redeploy only if the platform requires it for env changes.
+6. Run:
 
    ```bash
    npm run beta:smoke -- --url https://verified-reputation-platform.vercel.app

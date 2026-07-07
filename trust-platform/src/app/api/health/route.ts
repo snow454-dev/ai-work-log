@@ -33,7 +33,11 @@ function configurationCheck():
       ok: true,
       mailTransport: env.MAIL_TRANSPORT,
       betaAllowlistConfigured:
-        parseBetaAllowedEmails(env.BETA_ALLOWED_EMAILS).length > 0,
+        parseBetaAllowedEmails(
+          [env.BETA_ALLOWED_EMAILS, env.BETA_ADDITIONAL_ALLOWED_EMAILS]
+            .filter(Boolean)
+            .join(","),
+        ).length > 0,
     };
   } catch (error) {
     if (error instanceof ZodError) {
@@ -86,7 +90,14 @@ function betaAccessCheck({
 }) {
   const required = environment !== "development" && environment !== "test";
   const allowlistConfigured =
-    parseBetaAllowedEmails(process.env.BETA_ALLOWED_EMAILS).length > 0;
+    parseBetaAllowedEmails(
+      [
+        process.env.BETA_ALLOWED_EMAILS,
+        process.env.BETA_ADDITIONAL_ALLOWED_EMAILS,
+      ]
+        .filter(Boolean)
+        .join(","),
+    ).length > 0;
 
   return {
     ok: !required || allowlistConfigured,

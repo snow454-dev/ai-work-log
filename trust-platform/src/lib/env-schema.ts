@@ -8,6 +8,7 @@ const serverEnvSchema = z
     TOKEN_PEPPER: z.string().min(32),
     OTP_PEPPER: z.string().min(32),
     BETA_ALLOWED_EMAILS: z.string().optional(),
+    BETA_ADDITIONAL_ALLOWED_EMAILS: z.string().optional(),
     MAIL_TRANSPORT: z.enum(["smtp", "resend", "manual"]),
     SMTP_HOST: z.string().optional(),
     SMTP_PORT: z.coerce.number().int().positive().optional(),
