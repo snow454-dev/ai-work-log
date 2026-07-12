@@ -7,9 +7,10 @@ This guide is for the first 3-5 invited AI developers and company buyers. Keep t
 Production beta is considered ready to invite the first cohort when all of these are true:
 
 - [ ] `/api/health` returns `ok: true`.
-- [ ] `npm run beta:smoke -- --url https://verified-reputation-platform.vercel.app` passes.
+- [ ] `npm run beta:smoke -- --url https://jisseki.io` passes.
 - [ ] `BETA_ALLOWED_EMAILS` and `BETA_ADDITIONAL_ALLOWED_EMAILS` contain only invited professional account emails.
-- [ ] Supabase Auth redirect URLs include `https://verified-reputation-platform.vercel.app/auth/confirm`.
+- [ ] `BETA_ACCESS_NOTIFY_EMAIL` points to the inbox that will review incoming `/beta-access` requests.
+- [ ] Supabase Auth redirect URLs include `https://jisseki.io/auth/confirm`.
 - [ ] The first company reviewer already expects the verification request.
 
 Note: Vercel encrypted or sensitive environment variables may appear empty when pulled locally. Treat the deployed `/api/health` result and deployed smoke test as the source of truth for production readiness.
@@ -28,7 +29,7 @@ Avoid regulated data, cold reviewer outreach, anonymous marketplace-only work, a
 
 ## Review beta access requests
 
-Use Supabase SQL editor or table view with an admin/service-role session. Do not expose this table in the public app.
+New submissions are emailed to `BETA_ACCESS_NOTIFY_EMAIL` when that environment variable is configured. Use Supabase SQL editor or table view with an admin/service-role session for the source of truth. Do not expose this table in the public app.
 
 ```sql
 select
@@ -83,7 +84,7 @@ where id = 'REQUEST_ID';
 6. Run:
 
    ```bash
-   npm run beta:smoke -- --url https://verified-reputation-platform.vercel.app
+   npm run beta:smoke -- --url https://jisseki.io
    ```
 
 ## Message templates
@@ -97,7 +98,7 @@ JISSEKIのプライベートβに招待します。
 その後、企業ドメインの確認担当者に事実確認リンクを送ります。
 
 ログイン:
-https://verified-reputation-platform.vercel.app/sign-in?lang=ja
+https://jisseki.io/sign-in?lang=ja
 
 最初の目標:
 1. プロフィール作成

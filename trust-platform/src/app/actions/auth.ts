@@ -17,13 +17,31 @@ export type SignInState = {
 
 const signInSchema = z.object({
   email: z.string().trim().toLowerCase().pipe(z.email()),
+  next: z.string().optional(),
 });
+
+function safeNextPath(value: unknown): string {
+  if (typeof value !== "string") {
+    return "/dashboard";
+  }
+
+  const trimmed = value.trim();
+
+  if (!trimmed.startsWith("/") || trimmed.startsWith("//")) {
+    return "/dashboard";
+  }
+
+  return trimmed;
+}
 
 export async function signIn(
   _prevState: SignInState,
   formData: FormData,
 ): Promise<SignInState> {
-  const parsed = signInSchema.safeParse({ email: formData.get("email") });
+  const parsed = signInSchema.safeParse({
+    email: formData.get("email"),
+    next: formData.get("next") ?? undefined,
+  });
 
   if (!parsed.success) {
     return { error: "Enter a valid email address." };
@@ -40,10 +58,11 @@ export async function signIn(
   }
 
   const supabase = await createClient();
+  const next = safeNextPath(parsed.data.next);
   const { error } = await supabase.auth.signInWithOtp({
     email: parsed.data.email,
     options: {
-      emailRedirectTo: `${env.APP_URL}/auth/confirm`,
+      emailRedirectTo: `${env.APP_URL}/auth/confirm?next=${encodeURIComponent(next)}`,
       shouldCreateUser: true,
     },
   });

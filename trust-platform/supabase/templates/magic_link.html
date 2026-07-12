@@ -1,8 +1,9 @@
-<h2>Sign in to Verified Work</h2>
-<p>Use this secure link to continue:</p>
+<h2>JISSEKIにログイン</h2>
+<p>JISSEKIへのログインリクエストを受け付けました。</p>
+<p>下のボタンを押すと、JISSEKIのダッシュボードへ移動します。このリンクは短時間だけ有効で、1回だけ使用できます。</p>
 <p>
-  <a href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=email">
-    Sign in
+  <a href="{{ if .RedirectTo }}{{ .RedirectTo }}{{ else }}{{ .SiteURL }}/auth/confirm?next=%2Fdashboard{{ end }}&token_hash={{ .TokenHash }}&type=email">
+    JISSEKIにログインする
   </a>
 </p>
-<p>If you did not request this email, you can ignore it.</p>
+<p>このメールに心当たりがない場合は、何もせず破棄してください。</p>

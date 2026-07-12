@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 
+import { getCurrentUserId } from "@/data/auth";
 import { createReferenceRequest } from "@/data/reference-requests";
 import { safeParseReferenceRequest } from "@/domain/reference-request";
 
@@ -39,6 +40,8 @@ export async function submitReferenceRequest(
   _prevState: ReferenceRequestActionState,
   formData: FormData,
 ): Promise<ReferenceRequestActionState> {
+  await getCurrentUserId();
+
   const parsed = safeParseReferenceRequest(parseForm(formData));
 
   if (!parsed.success) {

@@ -177,6 +177,27 @@ const checks = [
     },
   },
   {
+    name: "Japanese verified solution discovery renders",
+    path: "/solutions?lang=ja",
+    validate: async (response) => {
+      if (!response.ok) {
+        return `Expected HTTP 200, got ${response.status}`;
+      }
+
+      const body = await response.text();
+      const protectionError = deploymentProtectionError(body);
+
+      if (protectionError) {
+        return protectionError;
+      }
+
+      return body.includes("実績から、次のAI導入先を探す。") &&
+        !body.includes("現在、実績を読み込めません")
+        ? undefined
+        : "Expected working Japanese verified solution discovery";
+    },
+  },
+  {
     name: "Japanese AI solutions buyer page renders",
     path: "/ai-solutions?lang=ja",
     validate: async (response) => {

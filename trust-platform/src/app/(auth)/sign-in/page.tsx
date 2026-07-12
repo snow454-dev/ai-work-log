@@ -12,6 +12,7 @@ const initialState: SignInState = {};
 type SearchParams = Promise<{
   error?: string | string[];
   lang?: string | string[];
+  next?: string | string[];
 }>;
 
 const signInCopy: Record<
@@ -26,6 +27,7 @@ const signInCopy: Record<
     emailHelp: string;
     accessHelp: string;
     accessCta: string;
+    gatedNotice: string;
     sending: string;
     submit: string;
   }
@@ -43,6 +45,8 @@ const signInCopy: Record<
     emailHelp: "We will email a magic link. No password is required.",
     accessHelp: "Not invited yet?",
     accessCta: "Request private beta access",
+    gatedNotice:
+      "Sign in for free to view member-only project details and submit reference requests.",
     sending: "Sending secure link…",
     submit: "Email me a secure link",
   },
@@ -59,6 +63,8 @@ const signInCopy: Record<
     emailHelp: "パスワード不要のマジックリンクをメールで送ります。",
     accessHelp: "まだ招待されていませんか？",
     accessCta: "プライベートβアクセスを申請",
+    gatedNotice:
+      "無料登録すると、会員限定の案件詳細確認と紹介依頼ができます。",
     sending: "安全なリンクを送信中…",
     submit: "安全なリンクをメールで受け取る",
   },
@@ -95,6 +101,7 @@ export default function SignInPage({
   const locale = resolveLocale(query);
   const copy = signInCopy[locale];
   const [state, formAction, pending] = useActionState(signIn, initialState);
+  const next = Array.isArray(query.next) ? query.next[0] : query.next;
   const emailError = localizeSignInError(state.error, locale);
   const hasEmailError = Boolean(emailError);
   const hasInvalidLink = query.error === "invalid";
@@ -139,6 +146,12 @@ export default function SignInPage({
           </p>
         ) : null}
 
+        {next ? (
+          <p className="mt-6 rounded-2xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800">
+            {copy.gatedNotice}
+          </p>
+        ) : null}
+
         {state.sent ? (
           <p
             className="mt-6 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800"
@@ -154,6 +167,7 @@ export default function SignInPage({
           aria-busy={pending}
           noValidate
         >
+          {next ? <input type="hidden" name="next" value={next} /> : null}
           <div className="space-y-2">
             <label
               htmlFor="email"

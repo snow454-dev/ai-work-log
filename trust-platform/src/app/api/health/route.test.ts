@@ -13,6 +13,7 @@ function setCompleteEnv(overrides: Record<string, string | undefined> = {}) {
   process.env.MAIL_TRANSPORT = "resend";
   process.env.RESEND_API_KEY = "re_test_123";
   process.env.MAIL_FROM = "JISSEKI <no-reply@jisseki.test>";
+  process.env.BETA_ACCESS_NOTIFY_EMAIL = "admin@jisseki.test";
   delete process.env.BETA_ALLOWED_EMAILS;
   delete process.env.BETA_ADDITIONAL_ALLOWED_EMAILS;
 
@@ -162,6 +163,7 @@ describe("/api/health", () => {
     expect(body.checks.configuration).toMatchObject({
       ok: true,
       mailTransport: "manual",
+      betaAccessNotificationConfigured: true,
     });
   });
 });

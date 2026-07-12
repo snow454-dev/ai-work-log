@@ -43,7 +43,7 @@ npm run beta:check-env:prod
 npm run beta:check-env:prod -- --env-file .env.production.local
 npm run beta:release-check
 npm run beta:release-check -- --env-file .env.production.local
-npm run beta:smoke -- --url https://your-deployment.example.com
+npm run beta:smoke -- --url https://jisseki.io
 ```
 
 `beta:print-env` prints a production-beta environment template with fresh random peppers. Paste the values into the deployment provider's encrypted environment-variable settings; do not commit real values.
@@ -74,9 +74,10 @@ After deployment, you can also run the manual GitHub Actions workflow `Trust Pla
    - Optional additive invite list: `BETA_ADDITIONAL_ALLOWED_EMAILS`
    - `MAIL_TRANSPORT=manual` for simple private beta
    - Optional for email-enabled beta: `MAIL_TRANSPORT=resend`, `RESEND_API_KEY`, `MAIL_FROM`
+   - `BETA_ACCESS_NOTIFY_EMAIL` for operator notifications when someone submits `/beta-access`
 6. Run `npm run beta:release-check`.
 7. Deploy the Next.js app. `trust-platform/vercel.json` pins the minimal Next.js build settings.
-8. Run `npm run beta:release-check -- --url https://YOUR-DEPLOYED-APP`, or trigger the `Trust Platform Beta Smoke` GitHub Actions workflow with the deployed URL.
+8. Run `npm run beta:release-check -- --url https://jisseki.io`, or trigger the `Trust Platform Beta Smoke` GitHub Actions workflow with the deployed URL.
 9. Run the first real smoke test with a friendly company-domain reviewer email.
 
 See [docs/private-beta-runbook.md](docs/private-beta-runbook.md) for the full beta launch runbook and [docs/first-cohort-launch.md](docs/first-cohort-launch.md) for the first 3-5 user invite process.

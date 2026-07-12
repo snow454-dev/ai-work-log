@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 
 import { LightLegalFooter } from "@/components/legal-footer";
 import { LanguageSwitcher } from "@/components/language-switcher";
+import { getOptionalUserId } from "@/data/auth";
 import {
   getPublicProfileBySlug,
   type PublicEvidenceRecord,
@@ -84,6 +85,10 @@ const profileCopy: Record<
     referencePathBody: string;
     referenceCta: string;
     reviewerDetails: string;
+    memberGateTitle: string;
+    memberGateBody: string;
+    memberGateCta: string;
+    memberReferenceCta: string;
   }
 > = {
   en: {
@@ -122,6 +127,11 @@ const profileCopy: Record<
       "The company reviewer allowed future reference requests to be routed through JISSEKI. Reviewer contact details stay private unless a future request is explicitly accepted.",
     referenceCta: "Request reference path",
     reviewerDetails: "Reviewer-approved reference details",
+    memberGateTitle: "Member-only project details",
+    memberGateBody:
+      "Create a free account or sign in to view approved outcome details, reviewer comments, and reference request access.",
+    memberGateCta: "Sign in to view details",
+    memberReferenceCta: "Sign in to request reference path",
   },
   ja: {
     badge: "公開中の検証済みプロフィール",
@@ -158,6 +168,11 @@ const profileCopy: Record<
       "企業の確認担当者は、JISSEKI経由の将来的な紹介依頼を許可しています。今後の依頼が明示的に承認されるまで、確認担当者の連絡先は非公開です。",
     referenceCta: "紹介依頼を送る",
     reviewerDetails: "確認担当者が承認した紹介情報",
+    memberGateTitle: "会員限定の案件詳細",
+    memberGateBody:
+      "無料登録またはログインすると、承認済みの成果詳細、確認担当者コメント、紹介依頼へのアクセスを確認できます。",
+    memberGateCta: "ログインして詳細を見る",
+    memberReferenceCta: "ログインして紹介依頼へ進む",
   },
 };
 
@@ -171,11 +186,16 @@ export default async function PublicProfilePage({
   const [{ slug }, query] = await Promise.all([params, searchParams]);
   const locale = resolveLocale(query);
   const copy = profileCopy[locale];
-  const profile = await getPublicProfileBySlug(slug);
+  const [profile, userId] = await Promise.all([
+    getPublicProfileBySlug(slug),
+    getOptionalUserId(),
+  ]);
 
   if (!profile) {
     notFound();
   }
+
+  const isMember = Boolean(userId);
 
   return (
     <main lang={locale} className="min-h-dvh bg-zinc-50 text-zinc-950">
@@ -296,6 +316,7 @@ export default async function PublicProfilePage({
                   profileSlug={profile.slug}
                   locale={locale}
                   copy={copy}
+                  isMember={isMember}
                 />
               ))}
             </ul>
@@ -332,11 +353,13 @@ function EvidenceCard({
   profileSlug,
   locale,
   copy,
+  isMember,
 }: {
   evidence: PublicEvidenceRecord;
   profileSlug: string;
   locale: Locale;
   copy: (typeof profileCopy)[Locale];
+  isMember: boolean;
 }) {
   const source = formatSource(evidence, locale, copy);
   const metric = formatMetric(evidence, copy);
@@ -391,7 +414,7 @@ function EvidenceCard({
         <EvidenceField label={copy.outcomeMetric} value={metric} />
       </dl>
 
-      {evidence.publicOutcomeStatement ? (
+      {isMember && evidence.publicOutcomeStatement ? (
         <div className="mt-6 rounded-2xl border border-zinc-200 bg-zinc-50 p-5">
           <h4 className="text-sm font-medium text-zinc-500">
             {copy.verifiedOutcome}
@@ -410,21 +433,33 @@ function EvidenceCard({
           <p className="mt-2 text-sm leading-6 text-zinc-600 text-pretty">
             {copy.referencePathBody}
           </p>
-          <Link
-            href={localizedHref(
-              `/p/${profileSlug}/reference/${evidence.id}`,
-              locale,
-            )}
-            className="mt-4 inline-flex rounded-full bg-zinc-950 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800 focus:outline-none focus:ring-2 focus:ring-zinc-950 focus:ring-offset-2"
-          >
-            {copy.referenceCta}
-          </Link>
+          {isMember ? (
+            <Link
+              href={localizedHref(
+                `/p/${profileSlug}/reference/${evidence.id}`,
+                locale,
+              )}
+              className="mt-4 inline-flex rounded-full bg-zinc-950 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800 focus:outline-none focus:ring-2 focus:ring-zinc-950 focus:ring-offset-2"
+            >
+              {copy.referenceCta}
+            </Link>
+          ) : (
+            <Link
+              href={signInHref(
+                localizedHref(`/p/${profileSlug}/reference/${evidence.id}`, locale),
+                locale,
+              )}
+              className="mt-4 inline-flex rounded-full bg-zinc-950 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800 focus:outline-none focus:ring-2 focus:ring-zinc-950 focus:ring-offset-2"
+            >
+              {copy.memberReferenceCta}
+            </Link>
+          )}
         </div>
       ) : null}
 
-      {reviewerMeta ||
+      {isMember && (reviewerMeta ||
       evidence.publicReviewerComment ||
-      evidence.publicRehireResponse ? (
+      evidence.publicRehireResponse) ? (
         <div className="mt-6 border-t border-zinc-200 pt-5">
           <h4 className="text-sm font-semibold text-zinc-950">
             {copy.reviewerDetails}
@@ -444,8 +479,38 @@ function EvidenceCard({
           ) : null}
         </div>
       ) : null}
+
+      {!isMember &&
+      (evidence.publicOutcomeStatement ||
+        reviewerMeta ||
+        evidence.publicReviewerComment ||
+        evidence.publicRehireResponse) ? (
+        <div className="mt-6 rounded-2xl border border-blue-200 bg-blue-50 p-5">
+          <h4 className="text-sm font-semibold text-blue-950">
+            {copy.memberGateTitle}
+          </h4>
+          <p className="mt-2 text-sm leading-6 text-blue-900 text-pretty">
+            {copy.memberGateBody}
+          </p>
+          <Link
+            href={signInHref(localizedHref(`/p/${profileSlug}`, locale), locale)}
+            className="mt-4 inline-flex rounded-full bg-blue-950 px-4 py-2 text-sm font-medium text-white hover:bg-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-950 focus:ring-offset-2"
+          >
+            {copy.memberGateCta}
+          </Link>
+        </div>
+      ) : null}
     </li>
   );
+}
+
+function signInHref(next: string, locale: Locale): string {
+  const params = new URLSearchParams({ next });
+  if (locale !== "en") {
+    params.set("lang", locale);
+  }
+
+  return `/sign-in?${params.toString()}`;
 }
 
 function EvidenceField({

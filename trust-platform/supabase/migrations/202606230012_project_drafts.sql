@@ -1,3 +1,4 @@
+-- Keep this migration version unique from 202606230011_manual_reviewer_session.sql.
 create or replace function public.create_project_draft(
   p_title text,
   p_company_name text,

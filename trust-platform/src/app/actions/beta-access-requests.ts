@@ -5,8 +5,11 @@ import { redirect } from "next/navigation";
 import { createBetaAccessRequest } from "@/data/beta-access-requests";
 import {
   safeParseBetaAccessRequest,
+  type BetaAccessRequestInput,
   type BetaAccessIntent,
 } from "@/domain/beta-access-request";
+import { getEmailTransport } from "@/lib/email";
+import { betaAccessRequestNotification } from "@/lib/email/templates";
 import { localizedHref, type Locale } from "@/lib/i18n";
 
 export type BetaAccessRequestActionState = {
@@ -38,6 +41,35 @@ function parseForm(formData: FormData): unknown {
   };
 }
 
+async function notifyBetaAccessRequest(
+  input: BetaAccessRequestInput,
+  requestId: string,
+): Promise<void> {
+  const notifyEmail = process.env.BETA_ACCESS_NOTIFY_EMAIL?.trim();
+
+  if (!notifyEmail) {
+    return;
+  }
+
+  try {
+    await getEmailTransport().send(
+      betaAccessRequestNotification({
+        to: notifyEmail,
+        requestId,
+        intent: input.intent,
+        requesterName: input.requesterName,
+        workEmail: input.workEmail,
+        companyName: input.companyName,
+        role: input.role,
+        useCase: input.useCase,
+        sourcePath: input.sourcePath,
+      }),
+    );
+  } catch (error) {
+    console.error("Unable to send beta access notification.", error);
+  }
+}
+
 export async function submitBetaAccessRequest(
   locale: Locale,
   _prevState: BetaAccessRequestActionState,
@@ -54,7 +86,8 @@ export async function submitBetaAccessRequest(
   }
 
   try {
-    await createBetaAccessRequest(parsed.data);
+    const created = await createBetaAccessRequest(parsed.data);
+    await notifyBetaAccessRequest(parsed.data, created.id);
   } catch {
     return {
       ok: false,

@@ -27,3 +27,11 @@ export async function requireUserId(client: ClaimsClient): Promise<string> {
 export const getCurrentUserId = cache(async () =>
   requireUserId(await createClient()),
 );
+
+export const getOptionalUserId = cache(async () => {
+  const supabase = await createClient();
+  const { data, error } = await supabase.auth.getClaims();
+  const subject = data?.claims?.sub;
+
+  return error || !subject ? null : subject;
+});

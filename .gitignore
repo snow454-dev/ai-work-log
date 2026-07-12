@@ -44,4 +44,5 @@ yarn-error.log*
 next-env.d.ts
 
 .lazyweb/
+trust-platform/supabase/.branches/
 trust-platform/supabase/.temp/

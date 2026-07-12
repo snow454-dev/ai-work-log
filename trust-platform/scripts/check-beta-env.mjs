@@ -232,6 +232,14 @@ if (mode === "production") {
     "Use MAIL_TRANSPORT=manual for simple private beta or resend for transactional email.",
   );
 
+  addCheck(
+    "beta access admin notification recipient is configured",
+    has("BETA_ACCESS_NOTIFY_EMAIL") &&
+      !isPlaceholder(value("BETA_ACCESS_NOTIFY_EMAIL")) &&
+      looksLikeEmail(value("BETA_ACCESS_NOTIFY_EMAIL")),
+    "Set BETA_ACCESS_NOTIFY_EMAIL so public beta access requests notify an operator.",
+  );
+
   if (mailTransport !== "manual") {
     addCheck(
       "MAIL_FROM is production-ready",

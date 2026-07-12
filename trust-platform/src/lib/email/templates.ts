@@ -22,6 +22,18 @@ type ProjectNotificationInput = TemplateBase & {
   actionUrl?: string;
 };
 
+type BetaAccessRequestNotificationInput = {
+  to: string;
+  requestId: string;
+  intent: "developer" | "company";
+  requesterName: string;
+  workEmail: string;
+  companyName: string | null;
+  role: string | null;
+  useCase: string;
+  sourcePath: string | null;
+};
+
 function escapeHtml(value: string): string {
   return value
     .replaceAll("&", "&amp;")
@@ -151,6 +163,35 @@ export function verificationDispute(
     `${input.projectTitle} has been marked disputed.`,
     input.note ?? "The evidence should stay hidden until the dispute is resolved.",
   ]);
+}
+
+export function betaAccessRequestNotification(
+  input: BetaAccessRequestNotificationInput,
+): EmailMessage {
+  const subject = `New JISSEKI beta access request: ${input.requesterName}`;
+  const sourceLine = input.sourcePath
+    ? `Source: ${input.sourcePath}`
+    : "Source: not provided";
+  const rendered = layout({
+    title: "New JISSEKI beta access request",
+    body: [
+      `Request ID: ${input.requestId}`,
+      `Purpose: ${input.intent === "developer" ? "AI developer" : "Company buyer"}`,
+      `Name: ${input.requesterName}`,
+      `Work email: ${input.workEmail}`,
+      `Company: ${input.companyName ?? "not provided"}`,
+      `Role: ${input.role ?? "not provided"}`,
+      `Use case: ${input.useCase}`,
+      sourceLine,
+      "Review this request in Supabase public.beta_access_requests, then add the work email to the beta allowlist if approved.",
+    ],
+  });
+
+  return {
+    to: input.to,
+    subject,
+    ...rendered,
+  };
 }
 
 function notificationEmail(

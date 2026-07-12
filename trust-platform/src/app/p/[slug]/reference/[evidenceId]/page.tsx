@@ -1,9 +1,10 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 
 import { LightLegalFooter } from "@/components/legal-footer";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { ReferenceRequestForm } from "@/components/reference-request-form";
+import { getOptionalUserId } from "@/data/auth";
 import { getPublicProfileBySlug } from "@/data/public-profile";
 import {
   localizedHref,
@@ -83,7 +84,10 @@ export default async function ReferenceRequestPage({
   ]);
   const locale = resolveLocale(query);
   const copy = referencePageCopy[locale];
-  const profile = await getPublicProfileBySlug(slug);
+  const [profile, userId] = await Promise.all([
+    getPublicProfileBySlug(slug),
+    getOptionalUserId(),
+  ]);
 
   if (!profile) {
     notFound();
@@ -93,6 +97,15 @@ export default async function ReferenceRequestPage({
 
   if (!evidence?.publicReferenceAvailable) {
     notFound();
+  }
+
+  if (!userId) {
+    redirect(
+      signInHref(
+        localizedHref(`/p/${profile.slug}/reference/${evidence.id}`, locale),
+        locale,
+      ),
+    );
   }
 
   const submitted = Array.isArray(query.submitted)
@@ -182,6 +195,15 @@ export default async function ReferenceRequestPage({
       </div>
     </main>
   );
+}
+
+function signInHref(next: string, locale: Locale): string {
+  const params = new URLSearchParams({ next });
+  if (locale !== "en") {
+    params.set("lang", locale);
+  }
+
+  return `/sign-in?${params.toString()}`;
 }
 
 function Step({ value, text }: { value: string; text: string }) {

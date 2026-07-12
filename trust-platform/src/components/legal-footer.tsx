@@ -34,7 +34,7 @@ export function LightLegalFooter({ locale = "en" }: { locale?: Locale }) {
         <p>{copy.notice}</p>
         <nav aria-label="Legal" className="flex gap-4">
           <Link
-            href={localizedHref("/ai-solutions", locale)}
+            href={localizedHref("/solutions", locale)}
             className="hover:text-zinc-950"
           >
             {copy.business}
@@ -66,7 +66,7 @@ export function DarkLegalFooter({ locale = "en" }: { locale?: Locale }) {
         <p>{copy.notice}</p>
         <nav aria-label="Legal" className="flex gap-4">
           <Link
-            href={localizedHref("/ai-solutions", locale)}
+            href={localizedHref("/solutions", locale)}
             className="hover:text-white"
           >
             {copy.business}

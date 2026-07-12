@@ -14,6 +14,7 @@ const serverEnvSchema = z
     SMTP_PORT: z.coerce.number().int().positive().optional(),
     RESEND_API_KEY: z.string().optional(),
     MAIL_FROM: z.string().optional(),
+    BETA_ACCESS_NOTIFY_EMAIL: z.email().optional(),
   })
   .superRefine((value, ctx) => {
     if (

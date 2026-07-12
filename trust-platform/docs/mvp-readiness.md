@@ -62,7 +62,8 @@ It is not ready for open public launch until counsel-reviewed legal terms, abuse
 
 - Confirm hosted Supabase migrations are applied.
 - Confirm production env vars and email transport are configured.
-- Run `npm run beta:release-check -- --env-file .vercel/.env.production.local --url https://YOUR-DEPLOYED-APP`, or the equivalent CI smoke workflow.
+- Confirm `BETA_ACCESS_NOTIFY_EMAIL` is configured so public beta access requests notify an operator.
+- Run `npm run beta:release-check -- --url https://jisseki.io`, or the equivalent CI smoke workflow.
 - Confirm `/api/health` returns `ok: true`.
 - Confirm `/beta-access?intent=company&lang=ja` captures a design-partner request after hosted migrations are applied.
 - Run one manual end-to-end smoke with a friendly company-domain reviewer.

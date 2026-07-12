@@ -21,6 +21,7 @@ function configurationCheck():
       ok: true;
       mailTransport: "smtp" | "resend" | "manual";
       betaAllowlistConfigured: boolean;
+      betaAccessNotificationConfigured: boolean;
     }
   | {
       ok: false;
@@ -38,6 +39,9 @@ function configurationCheck():
             .filter(Boolean)
             .join(","),
         ).length > 0,
+      betaAccessNotificationConfigured: Boolean(
+        env.BETA_ACCESS_NOTIFY_EMAIL,
+      ),
     };
   } catch (error) {
     if (error instanceof ZodError) {

@@ -8,7 +8,7 @@ This runbook is for the first controlled beta with known professionals and known
 - `npm run typecheck`, `npm run lint`, `npm test`, and `npm run build` pass locally or in CI.
 - `npm run beta:release-check` passes before deployment.
 - `npm run beta:check-env:prod` passes in the deployment environment.
-- `npm run beta:release-check -- --url https://YOUR-DEPLOYED-APP` passes after deployment.
+- `npm run beta:release-check -- --url https://jisseki.io` passes after deployment.
 - The manual GitHub Actions workflow `Trust Platform Beta Smoke` passes for the deployed URL, if you prefer CI-hosted smoke checks.
 - Hosted Supabase migrations are applied.
 - Supabase Auth redirect URLs include the deployed `APP_URL`.
@@ -35,9 +35,10 @@ Production beta should use:
 
 - `MAIL_TRANSPORT=manual` for the first simple private beta
 - `MAIL_TRANSPORT=resend` plus `RESEND_API_KEY` when transactional email is verified
-- `APP_URL=https://...`
+- `APP_URL=https://jisseki.io`
 - a verified sender in `MAIL_FROM` when `MAIL_TRANSPORT=resend`
 - unique random values for both peppers
+- `BETA_ACCESS_NOTIFY_EMAIL` set to the operator inbox that should receive public beta access requests
 - `BETA_ALLOWED_EMAILS` set to exact professional account emails for the first cohort
 
 Generate peppers with:
@@ -75,14 +76,45 @@ npm run beta:release-check -- --env-file .env.production.local
 1. Create a hosted Supabase project.
 2. Apply all migrations in `supabase/migrations`.
 3. Confirm Row Level Security remains enabled.
-4. Configure Auth email magic links to redirect to:
+4. Configure Auth URL settings:
 
    ```text
-   https://YOUR_APP_URL/auth/confirm
+   Site URL: https://jisseki.io
+   Redirect URL: https://jisseki.io/auth/confirm
    ```
 
-5. Configure allowed site URLs and redirect URLs for the deployed domain.
-6. Do not add a Supabase service role key to Vercel. Reviewer and receipt flows use token-gated security-definer RPCs instead.
+   Keep local development redirect URLs only if needed:
+
+   ```text
+   http://localhost:3000/auth/confirm
+   ```
+
+5. Configure the hosted Supabase magic-link email template. The repository copy is `supabase/templates/magic_link.html`; the hosted project must be updated in Supabase Dashboard because production emails are not read from the repository at runtime.
+
+   Subject:
+
+   ```text
+   JISSEKI ログインリンク
+   ```
+
+   Body:
+
+   ```html
+   <h2>JISSEKIにログイン</h2>
+   <p>JISSEKIへのログインリクエストを受け付けました。</p>
+   <p>下のボタンを押すと、JISSEKIのダッシュボードへ移動します。このリンクは短時間だけ有効で、1回だけ使用できます。</p>
+   <p>
+     <a href="{{ if .RedirectTo }}{{ .RedirectTo }}{{ else }}{{ .SiteURL }}/auth/confirm{{ end }}?token_hash={{ .TokenHash }}&type=email">
+       JISSEKIにログインする
+     </a>
+   </p>
+   <p>このメールに心当たりがない場合は、何もせず破棄してください。</p>
+   ```
+
+   The link must use `{{ .RedirectTo }}` so the app-provided `emailRedirectTo` value wins. If Supabase sends users to `ai-work-log.vercel.app`, the hosted Site URL or redirect allowlist is still stale.
+
+6. Configure allowed site URLs and redirect URLs for the deployed domain.
+7. Do not add a Supabase service role key to Vercel. Reviewer and receipt flows use token-gated security-definer RPCs instead.
 
 ## Vercel setup
 
@@ -97,6 +129,37 @@ Create one Vercel project for the beta app:
 These commands are also pinned in `vercel.json` so the deployment does not accidentally build another app in the repository.
 
 There is also a repository-root `vercel.json` fallback. It points install, build, dev, and output settings at `trust-platform` in case the Vercel project is accidentally created with the repository root as its Root Directory. Prefer setting Root Directory to `trust-platform` in Vercel, but keep the fallback so preview deployments do not build the old root app.
+
+### Custom domain
+
+Production uses `https://jisseki.io`.
+
+Vercel project domains:
+
+- `jisseki.io`
+- `www.jisseki.io`
+
+If DNS stays at Muumuu Domain, set these records at the DNS provider:
+
+```text
+A     @     76.76.21.21
+CNAME www   cname.vercel-dns.com.
+```
+
+If switching to Vercel nameservers instead, set the registrar nameservers to:
+
+```text
+ns1.vercel-dns.com
+ns2.vercel-dns.com
+```
+
+After DNS changes propagate, verify:
+
+```bash
+npx vercel domains verify jisseki.io
+npx vercel domains verify www.jisseki.io
+npm run beta:smoke -- --url https://jisseki.io
+```
 
 ## Professional access control
 
@@ -117,6 +180,8 @@ In deployed beta environments, `/api/health` fails when this allowlist is missin
 ## Beta access request intake
 
 The public `/beta-access` page collects purchase-intent and design-partner requests from AI developers and company buyers. Requests are stored in `public.beta_access_requests`.
+
+If `BETA_ACCESS_NOTIFY_EMAIL` is configured, each saved request also sends an operator notification email to that address. The notification contains the request id, requester name, work email, company, role, use case, and source path. If the notification provider is temporarily unavailable, the request still stays saved in Supabase and must be reviewed from the table below.
 
 Operational handling:
 
@@ -154,7 +219,7 @@ After deployment:
 1. Run the local release gate against the deployed URL:
 
    ```bash
-   npm run beta:release-check -- --url https://YOUR-DEPLOYED-APP
+   npm run beta:release-check -- --url https://jisseki.io
    ```
 
    Alternatively, open GitHub Actions, run `Trust Platform Beta Smoke`, and enter the deployed app URL.

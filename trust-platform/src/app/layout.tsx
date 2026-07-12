@@ -2,8 +2,18 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Trust Platform",
-  description: "Verified client approvals and referral-ready project proof.",
+  metadataBase: new URL("https://jisseki.io"),
+  title: {
+    default: "JISSEKI — Verified AI solutions",
+    template: "%s | JISSEKI",
+  },
+  description:
+    "Find AI solutions through company-approved outcomes, then contact the people who delivered them.",
+  applicationName: "JISSEKI",
+  openGraph: {
+    type: "website",
+    siteName: "JISSEKI",
+  },
 };
 
 export default function RootLayout({
