@@ -83,6 +83,10 @@ function summarizeHealthResponse(json) {
     checks.betaAccess && typeof checks.betaAccess === "object"
       ? checks.betaAccess
       : undefined;
+  const adminAccess =
+    checks.adminAccess && typeof checks.adminAccess === "object"
+      ? checks.adminAccess
+      : undefined;
 
   const details = [];
 
@@ -101,6 +105,14 @@ function summarizeHealthResponse(json) {
       `betaAccess ok=${String(betaAccess.ok)} required=${String(
         betaAccess.required,
       )} allowlistConfigured=${String(betaAccess.allowlistConfigured)}`,
+    );
+  }
+
+  if (adminAccess) {
+    details.push(
+      `adminAccess ok=${String(adminAccess.ok)} required=${String(
+        adminAccess.required,
+      )} signInConfigured=${String(adminAccess.signInConfigured)}`,
     );
   }
 
@@ -174,6 +186,27 @@ const checks = [
         body.includes("安全なリンクをメールで受け取る")
         ? undefined
         : "Expected Japanese sign-in content";
+    },
+  },
+  {
+    name: "browser admin redirects unauthenticated visitors to sign-in",
+    path: "/admin?lang=ja",
+    validate: async (response) => {
+      if (!response.ok) {
+        return `Expected HTTP 200 after sign-in redirect, got ${response.status}`;
+      }
+
+      const body = await response.text();
+      const protectionError = deploymentProtectionError(body);
+
+      if (protectionError) {
+        return protectionError;
+      }
+
+      return response.url.includes("/sign-in?") &&
+        body.includes("安全なリンクをメールで受け取る")
+        ? undefined
+        : "Expected protected /admin to redirect to Japanese sign-in";
     },
   },
   {

@@ -34,6 +34,12 @@ type BetaAccessRequestNotificationInput = {
   sourcePath: string | null;
 };
 
+type BetaAccessInvitationInput = {
+  to: string;
+  requesterName: string;
+  signInUrl: string;
+};
+
 function escapeHtml(value: string): string {
   return value
     .replaceAll("&", "&amp;")
@@ -183,8 +189,30 @@ export function betaAccessRequestNotification(
       `Role: ${input.role ?? "not provided"}`,
       `Use case: ${input.useCase}`,
       sourceLine,
-      "Review this request in Supabase public.beta_access_requests, then add the work email to the beta allowlist if approved.",
+      "Review and invite this applicant from the protected JISSEKI /admin console.",
     ],
+  });
+
+  return {
+    to: input.to,
+    subject,
+    ...rendered,
+  };
+}
+
+export function betaAccessInvitation(
+  input: BetaAccessInvitationInput,
+): EmailMessage {
+  const subject = "You are invited to the JISSEKI private beta";
+  const rendered = layout({
+    title: "Welcome to JISSEKI",
+    body: [
+      `${input.requesterName}, your JISSEKI private beta access is ready.`,
+      "Use your invited email address to receive a secure magic link. No password is required.",
+      "JISSEKI turns completed AI work into company-verified proof that can be shared globally.",
+      "JISSEKIプライベートβへの招待が承認されました。申請したメールアドレスで安全なログインリンクを受け取れます。",
+    ],
+    cta: { label: "Open JISSEKI", href: input.signInUrl },
   });
 
   return {

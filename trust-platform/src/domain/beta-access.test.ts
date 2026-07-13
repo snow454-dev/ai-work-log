@@ -61,4 +61,14 @@ describe("isEmailAllowedForBeta", () => {
       }),
     ).toBe(true);
   });
+
+  it("allows admin sign-in emails without granting admin authority in the app", () => {
+    expect(
+      isEmailAllowedForBeta({
+        email: "hello@aisupports.cc",
+        allowedEmails: "founder@example.com",
+        adminAllowedEmails: "hello@aisupports.cc",
+      }),
+    ).toBe(true);
+  });
 });

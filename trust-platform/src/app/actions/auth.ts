@@ -7,7 +7,9 @@ import {
   betaAccessDeniedMessage,
   isEmailAllowedForBeta,
 } from "@/domain/beta-access";
+import { isBetaInviteHashActive } from "@/data/admin-beta-access";
 import { env } from "@/lib/env";
+import { hashBetaInviteEmail } from "@/lib/security/beta-invite";
 import { createClient } from "@/lib/supabase/server";
 
 export type SignInState = {
@@ -47,13 +49,17 @@ export async function signIn(
     return { error: "Enter a valid email address." };
   }
 
-  if (
-    !isEmailAllowedForBeta({
+  const allowedByConfiguration = isEmailAllowedForBeta({
       email: parsed.data.email,
       allowedEmails: env.BETA_ALLOWED_EMAILS,
       additionalAllowedEmails: env.BETA_ADDITIONAL_ALLOWED_EMAILS,
-    })
-  ) {
+      adminAllowedEmails: env.ADMIN_ALLOWED_EMAILS,
+    });
+  const allowedByInvitation = allowedByConfiguration
+    ? false
+    : await isBetaInviteHashActive(hashBetaInviteEmail(parsed.data.email));
+
+  if (!allowedByConfiguration && !allowedByInvitation) {
     return { error: betaAccessDeniedMessage };
   }
 

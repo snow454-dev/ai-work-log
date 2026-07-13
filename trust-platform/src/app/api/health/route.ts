@@ -22,6 +22,7 @@ function configurationCheck():
       mailTransport: "smtp" | "resend" | "manual";
       betaAllowlistConfigured: boolean;
       betaAccessNotificationConfigured: boolean;
+      adminSignInConfigured: boolean;
     }
   | {
       ok: false;
@@ -35,13 +36,18 @@ function configurationCheck():
       mailTransport: env.MAIL_TRANSPORT,
       betaAllowlistConfigured:
         parseBetaAllowedEmails(
-          [env.BETA_ALLOWED_EMAILS, env.BETA_ADDITIONAL_ALLOWED_EMAILS]
+          [
+            env.BETA_ALLOWED_EMAILS,
+            env.BETA_ADDITIONAL_ALLOWED_EMAILS,
+          ]
             .filter(Boolean)
             .join(","),
         ).length > 0,
       betaAccessNotificationConfigured: Boolean(
         env.BETA_ACCESS_NOTIFY_EMAIL,
       ),
+      adminSignInConfigured:
+        parseBetaAllowedEmails(env.ADMIN_ALLOWED_EMAILS).length > 0,
     };
   } catch (error) {
     if (error instanceof ZodError) {
@@ -110,11 +116,28 @@ function betaAccessCheck({
   };
 }
 
+function adminAccessCheck({
+  environment,
+}: {
+  environment: string;
+}) {
+  const required = environment !== "development" && environment !== "test";
+  const signInConfigured =
+    parseBetaAllowedEmails(process.env.ADMIN_ALLOWED_EMAILS).length > 0;
+
+  return {
+    ok: !required || signInConfigured,
+    required,
+    signInConfigured,
+  };
+}
+
 export async function GET() {
   const environment = environmentLabel();
   const configuration = configurationCheck();
   const betaAccess = betaAccessCheck({ environment });
-  const ok = configuration.ok && betaAccess.ok;
+  const adminAccess = adminAccessCheck({ environment });
+  const ok = configuration.ok && betaAccess.ok && adminAccess.ok;
 
   return Response.json(
     {
@@ -126,6 +149,7 @@ export async function GET() {
       checks: {
         configuration,
         betaAccess,
+        adminAccess,
       },
     },
     {

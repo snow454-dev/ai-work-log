@@ -14,6 +14,7 @@ function setCompleteEnv(overrides: Record<string, string | undefined> = {}) {
   process.env.RESEND_API_KEY = "re_test_123";
   process.env.MAIL_FROM = "JISSEKI <no-reply@jisseki.test>";
   process.env.BETA_ACCESS_NOTIFY_EMAIL = "admin@jisseki.test";
+  process.env.ADMIN_ALLOWED_EMAILS = "hello@aisupports.cc";
   delete process.env.BETA_ALLOWED_EMAILS;
   delete process.env.BETA_ADDITIONAL_ALLOWED_EMAILS;
 
@@ -143,6 +144,46 @@ describe("/api/health", () => {
       ok: true,
       required: true,
       allowlistConfigured: true,
+    });
+  });
+
+  it("reports browser admin sign-in configuration", async () => {
+    setCompleteEnv({
+      VERCEL_ENV: "production",
+      BETA_ALLOWED_EMAILS: "founder@jisseki.test",
+      ADMIN_ALLOWED_EMAILS: "hello@aisupports.cc",
+    });
+
+    const response = await GET();
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body.checks.configuration).toMatchObject({
+      ok: true,
+      adminSignInConfigured: true,
+    });
+    expect(body.checks.adminAccess).toEqual({
+      ok: true,
+      required: true,
+      signInConfigured: true,
+    });
+  });
+
+  it("requires a browser admin sign-in allowlist in production", async () => {
+    setCompleteEnv({
+      VERCEL_ENV: "production",
+      BETA_ALLOWED_EMAILS: "founder@jisseki.test",
+      ADMIN_ALLOWED_EMAILS: undefined,
+    });
+
+    const response = await GET();
+    const body = await response.json();
+
+    expect(response.status).toBe(503);
+    expect(body.checks.adminAccess).toEqual({
+      ok: false,
+      required: true,
+      signInConfigured: false,
     });
   });
 

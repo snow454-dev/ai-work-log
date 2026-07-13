@@ -22,13 +22,17 @@ export function isEmailAllowedForBeta({
   email,
   allowedEmails,
   additionalAllowedEmails,
+  adminAllowedEmails,
 }: {
   email: string;
   allowedEmails?: string | null;
   additionalAllowedEmails?: string | null;
+  adminAllowedEmails?: string | null;
 }): boolean {
   const allowed = parseBetaAllowedEmails(
-    [allowedEmails, additionalAllowedEmails].filter(Boolean).join(","),
+    [allowedEmails, additionalAllowedEmails, adminAllowedEmails]
+      .filter(Boolean)
+      .join(","),
   );
 
   if (allowed.length === 0) {

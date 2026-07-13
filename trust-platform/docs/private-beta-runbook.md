@@ -29,6 +29,7 @@ Required:
 - `OTP_PEPPER`
 - `BETA_ALLOWED_EMAILS`
 - Optional additive invite list: `BETA_ADDITIONAL_ALLOWED_EMAILS`
+- `ADMIN_ALLOWED_EMAILS`
 - `MAIL_TRANSPORT`
 
 Production beta should use:
@@ -40,6 +41,7 @@ Production beta should use:
 - unique random values for both peppers
 - `BETA_ACCESS_NOTIFY_EMAIL` set to the operator inbox that should receive public beta access requests
 - `BETA_ALLOWED_EMAILS` set to exact professional account emails for the first cohort
+- `ADMIN_ALLOWED_EMAILS=hello@aisupports.cc` for browser admin sign-in
 
 Generate peppers with:
 
@@ -185,16 +187,27 @@ If `BETA_ACCESS_NOTIFY_EMAIL` is configured, each saved request also sends an op
 
 Operational handling:
 
-1. Review new requests in Supabase using the service-role dashboard or a controlled internal query.
+1. Sign in with an email listed in `ADMIN_ALLOWED_EMAILS`, then open `https://jisseki.io/admin?lang=ja`.
+2. Review new AI developer and company requests in the protected browser console.
+3. Mark a request reviewing, invite it, decline it, or close the completed workflow.
+4. Inviting grants database-backed access to the exact request email before attempting invitation email delivery.
+5. Ask the requester to sign in and verify one project before expanding usage.
+
+`hello@aisupports.cc` is seeded as the initial database administrator. Adding an email only to `ADMIN_ALLOWED_EMAILS` permits magic-link sign-in but does not grant `/admin`; database membership remains authoritative.
+
+Legacy fallback handling:
+
+1. Use the Supabase dashboard only if the browser console is unavailable.
 2. Prioritize requests with one real completed AI solution project or a concrete company buyer need.
-3. If approved, add the requester work email to `BETA_ALLOWED_EMAILS` or `BETA_ADDITIONAL_ALLOWED_EMAILS`.
-4. Ask the requester to sign in and verify one project before expanding usage.
-5. Mark the request status internally as `reviewing`, `invited`, `declined`, or `closed`.
+3. Do not manually edit invite hashes. Restore the browser console or use the reviewed RPCs.
 
 Security notes:
 
 - The table has RLS forced and no direct client read policy.
 - Public submission goes through `create_beta_access_request`.
+- Browser administration goes through authenticated, security-definer RPCs that re-check database admin membership.
+- Invite access stores only an HMAC of the normalized email; the plain email stays in the protected request record.
+- Status changes and invites append sanitized audit events without email addresses or invite hashes.
 - Submitting the form does not publish proof, expose reviewer contacts, or create a professional account by itself.
 
 ## Email setup

@@ -118,7 +118,12 @@ function isHttpsUrl(current) {
 }
 
 function allowedEmailList() {
-  return value("BETA_ALLOWED_EMAILS")
+  return [
+    value("BETA_ALLOWED_EMAILS"),
+    value("BETA_ADDITIONAL_ALLOWED_EMAILS"),
+  ]
+    .filter(Boolean)
+    .join(",")
     .split(/[,\n]/)
     .map((entry) => entry.trim().toLowerCase())
     .filter(Boolean);
@@ -240,6 +245,22 @@ if (mode === "production") {
     "Set BETA_ACCESS_NOTIFY_EMAIL so public beta access requests notify an operator.",
   );
 
+  const adminEmails = value("ADMIN_ALLOWED_EMAILS")
+    .split(/[,\n]/)
+    .map((entry) => entry.trim().toLowerCase())
+    .filter(Boolean);
+  const invalidAdminEmails = adminEmails.filter(
+    (email) => isPlaceholder(email) || !looksLikeEmail(email),
+  );
+
+  addCheck(
+    "browser admin sign-in allowlist is configured",
+    adminEmails.length > 0 && invalidAdminEmails.length === 0,
+    invalidAdminEmails.length
+      ? `Invalid entries: ${invalidAdminEmails.join(", ")}`
+      : "Set ADMIN_ALLOWED_EMAILS to the exact operator email addresses.",
+  );
+
   if (mailTransport !== "manual") {
     addCheck(
       "MAIL_FROM is production-ready",
@@ -257,7 +278,7 @@ if (mode === "production") {
   addCheck(
     "private beta account allowlist is configured",
     allowedEmails.length > 0,
-    "Set BETA_ALLOWED_EMAILS to comma-separated professional account emails before beta.",
+    "Set BETA_ALLOWED_EMAILS or BETA_ADDITIONAL_ALLOWED_EMAILS to bootstrap private beta access.",
   );
 
   addCheck(
@@ -265,7 +286,7 @@ if (mode === "production") {
     allowedEmails.length > 0 && invalidAllowedEmails.length === 0,
     invalidAllowedEmails.length
       ? `Invalid entries: ${invalidAllowedEmails.join(", ")}`
-      : "Set BETA_ALLOWED_EMAILS to exact email addresses.",
+      : "Set private beta access variables to exact email addresses.",
   );
 }
 
